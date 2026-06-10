@@ -1,0 +1,138 @@
+// /api/ai/analyze — AI fallback chain (AI-R05): Claude → Gemini → Static Analysis.
+// API key bisa dari server env ATAU dikirim user (BYOK) di body request.
+import { NextRequest, NextResponse } from "next/server";
+import { generateStaticAnalysis } from "@/lib/static-analysis";
+import { FALLBACK_TEAMS, FALLBACK_COACHES } from "@/lib/fallback-data";
+import type { AIAnalysisResponse } from "@/lib/types";
+
+export const maxDuration = 30; // R-06
+
+const SYSTEM_PROMPT = `Kamu adalah Analis Taktis AI untuk FIFA World Cup 2026.
+Tugasmu menganalisis pertandingan berdasarkan data statistik, lineup, formasi, dan profil pelatih.
+ATURAN KETAT:
+1. SELALU kembalikan respons dalam format JSON valid. Tidak ada teks di luar JSON.
+2. Jangan mengarang data. Jika data tidak tersedia, isi field dengan null.
+3. Gunakan bahasa Indonesia yang informatif dan engaging.
+4. Analisis berbasis data yang diberikan, bukan asumsi.
+5. JANGAN cantumkan confidence level — itu dikalkulasi sistem.
+Skema JSON: { "tacticalMatchup": string|null, "coachPhilosophy": string|null, "keyPlayers": [{"team","name","position","reason"}], "prediction": {"homeScore":number,"awayScore":number,"alternativeScenario":string,"reasoning":string}, "userPredictionEval": string|null }`;
+
+function buildUserPrompt(body: AnalyzeBody): string {
+  const { home, away, homeCoach, awayCoach, tier, userPrediction } = body;
+  const lines = [
+    `Pertandingan: ${home.name} (HOME) vs ${away.name} (AWAY). Tier analisis: ${tier}.`,
+    `Statistik ${home.name}: rating ${home.rating}, attack ${home.attack}, defense ${home.defense}, possession ${home.possession}%, form ${home.form?.join("-")}.`,
+    `Statistik ${away.name}: rating ${away.rating}, attack ${away.attack}, defense ${away.defense}, possession ${away.possession}%, form ${away.form?.join("-")}.`,
+  ];
+  if (tier >= 3 && homeCoach && awayCoach) {
+    lines.push(`Pelatih ${home.name}: ${homeCoach.name}, formasi ${homeCoach.formation}, gaya ${homeCoach.playingStyle}, press ${homeCoach.pressStyle}.`);
+    lines.push(`Pelatih ${away.name}: ${awayCoach.name}, formasi ${awayCoach.formation}, gaya ${awayCoach.playingStyle}, press ${awayCoach.pressStyle}.`);
+    lines.push("Sertakan analisis tacticalMatchup.");
+  }
+  if (tier >= 4) lines.push("Sertakan coachPhilosophy.");
+  if (userPrediction) lines.push(`Tebakan user: ${userPrediction.homeScore}-${userPrediction.awayScore}. Evaluasi di userPredictionEval.`);
+  return lines.join("\n");
+}
+
+interface AnalyzeBody {
+  home: (typeof FALLBACK_TEAMS)[string];
+  away: (typeof FALLBACK_TEAMS)[string];
+  homeCoach?: (typeof FALLBACK_COACHES)[string] | null;
+  awayCoach?: (typeof FALLBACK_COACHES)[string] | null;
+  tier: number;
+  userPrediction?: { homeScore: number; awayScore: number } | null;
+  apiKey?: string;
+  provider?: "claude" | "gemini";
+}
+
+function extractJSON(text: string): AIAnalysisResponse | null {
+  try {
+    const cleaned = text.replace(/```json|```/g, "").trim();
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    if (start < 0 || end < 0) return null;
+    return JSON.parse(cleaned.slice(start, end + 1));
+  } catch {
+    return null;
+  }
+}
+
+async function tryClaude(body: AnalyzeBody, key: string): Promise<AIAnalysisResponse | null> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 28000);
+  try {
+    const model = body.tier >= 3 ? "claude-sonnet-4-6" : "claude-haiku-4-5-20251001";
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({
+        model,
+        max_tokens: 1200,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: "user", content: buildUserPrompt(body) }],
+      }),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const text = (data.content ?? []).filter((b: { type: string }) => b.type === "text").map((b: { text: string }) => b.text).join("\n");
+    const parsed = extractJSON(text);
+    if (parsed) parsed._provider = "claude";
+    return parsed;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+async function tryGemini(body: AnalyzeBody, key: string): Promise<AIAnalysisResponse | null> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 20000);
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          contents: [{ role: "user", parts: [{ text: buildUserPrompt(body) }] }],
+          generationConfig: { responseMimeType: "application/json" },
+        }),
+        signal: ctrl.signal,
+      }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const parsed = extractJSON(text);
+    if (parsed) parsed._provider = "gemini";
+    return parsed;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+export async function POST(req: NextRequest) {
+  const body = (await req.json()) as AnalyzeBody;
+
+  const claudeKey = body.provider === "claude" || !body.provider ? body.apiKey || process.env.ANTHROPIC_API_KEY : process.env.ANTHROPIC_API_KEY;
+  const geminiKey = body.provider === "gemini" ? body.apiKey || process.env.GEMINI_API_KEY : process.env.GEMINI_API_KEY;
+
+  // 1) Claude
+  if (claudeKey) {
+    const r = await tryClaude(body, claudeKey);
+    if (r) return NextResponse.json(r);
+  }
+  // 2) Gemini
+  if (geminiKey) {
+    const r = await tryGemini(body, geminiKey);
+    if (r) return NextResponse.json(r);
+  }
+  // 3) Static analysis — selalu berhasil
+  const fallback = generateStaticAnalysis(body.home, body.away, body.homeCoach, body.awayCoach, body.userPrediction);
+  return NextResponse.json(fallback);
+}

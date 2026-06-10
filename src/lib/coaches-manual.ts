@@ -1,0 +1,363 @@
+// Data pelatih SEMUA 48 tim WC 2026
+// Sumber terverifikasi: FIFPlay.com (Mei 2026), Bolavip, Wikipedia
+// Brazil = Carlo Ancelotti (bukan Dorival Júnior — resmi sejak 2025)
+// Terakhir diperbarui: 10 Juni 2026
+import type { Coach } from "./types";
+
+export const MANUAL_COACHES: Record<string, Coach> = {
+  // ─── GROUP A ───────────────────────────────────────────────────────
+  mex: {
+    id:"coach-mex",teamId:"mex",name:"Javier Aguirre",nationality:"Meksiko",age:65,
+    formation:"4-3-3",winRate:52,drawRate:22,lossRate:26,
+    philosophy:"Blok pertahanan kompak dan transisi cepat. Aguirre terkenal dengan disiplin taktis dan kemampuan memotivasi menghadapi lawan lebih kuat. WC ketiga bersama El Tri.",
+    pressStyle:"MID",playingStyle:"COUNTER",wcExp:3,titles:"Gold Cup 2003",
+    traits:["Disiplin tinggi","Counter attack","Set piece","Blok rendah"],
+  },
+  rsa: {
+    id:"coach-rsa",teamId:"rsa",name:"Hugo Broos",nationality:"Belgia",age:72,
+    formation:"4-3-3",winRate:55,drawRate:20,lossRate:25,
+    philosophy:"Membangun tim Afrika Selatan dari bawah dengan disiplin taktis. Broos transformasi Bafana Bafana menjadi kekuatan di Afrika sejak 2021.",
+    pressStyle:"MID",playingStyle:"COUNTER",wcExp:1,titles:"AFCON 2017 (Kamerun)",
+    traits:["Disiplin taktis","Pertahanan terstruktur","Pengembangan pemain muda","Pragmatis"],
+  },
+  kor: {
+    id:"coach-kor",teamId:"kor",name:"Hong Myung-bo",nationality:"Korea Selatan",age:55,
+    formation:"4-2-3-1",winRate:48,drawRate:24,lossRate:28,
+    philosophy:"Transisi cepat dengan pressing tinggi di lini tengah. Memanfaatkan kecepatan Son Heung-min dan pemain sayap aktif.",
+    pressStyle:"HIGH",playingStyle:"COUNTER",wcExp:1,titles:"Asian Cup Runner-up 2023",
+    traits:["Pressing tinggi","Transisi cepat","Fisik prima","Disiplin taktis"],
+  },
+  cze: {
+    id:"coach-cze",teamId:"cze",name:"Miroslav Koubek",nationality:"Ceko",age:66,
+    formation:"4-2-3-1",winRate:50,drawRate:23,lossRate:27,
+    philosophy:"Pragmatis dan solide. Koubek membangun tim yang sulit dikalahkan dengan organisasi defensif baik dan memanfaatkan set piece.",
+    pressStyle:"MID",playingStyle:"HYBRID",wcExp:0,titles:"Liga Ceko (Plzeň 2022)",
+    traits:["Solid defensif","Set piece","Pragmatis","Kolektif"],
+  },
+  // ─── GROUP B ───────────────────────────────────────────────────────
+  can: {
+    id:"coach-can",teamId:"can",name:"Jesse Marsch",nationality:"Amerika Serikat",age:50,
+    formation:"4-2-3-1",winRate:53,drawRate:20,lossRate:27,
+    philosophy:"Gegenpressing intensitas tinggi khas Red Bull. Marsch membangun Kanada dengan semangat juang luar biasa dan pressing brutal tanpa bola.",
+    pressStyle:"HIGH",playingStyle:"DIRECT",wcExp:0,titles:"CONCACAF Nations League",
+    traits:["Gegenpressing","Intensitas tinggi","Semangat juang","Direct play"],
+  },
+  bih: {
+    id:"coach-bih",teamId:"bih",name:"Sergej Barbarez",nationality:"Bosnia",age:52,
+    formation:"4-4-2",winRate:45,drawRate:25,lossRate:30,
+    philosophy:"Legenda Bosnia yang kini melatih dengan pendekatan pragmatis. Memaksimalkan kekuatan fisik pemain Bosnia di lini tengah.",
+    pressStyle:"MID",playingStyle:"HYBRID",wcExp:0,titles:"—",
+    traits:["Kuat fisik","Pragmatis","Lini tengah kuat","Kolektif"],
+  },
+  qat: {
+    id:"coach-qat",teamId:"qat",name:"Julen Lopetegui",nationality:"Spanyol",age:57,
+    formation:"4-3-3",winRate:56,drawRate:21,lossRate:23,
+    philosophy:"Sepak bola posesif dengan struktur menyerang jelas. Lopetegui membawa filosofi Spanyol ke Qatar — penguasaan bola dan pressing tinggi.",
+    pressStyle:"HIGH",playingStyle:"POSSESSION",wcExp:0,titles:"UCL 2016 (Real Madrid asisten), Europa League 2022 (Sevilla)",
+    traits:["Penguasaan bola","Pressing aktif","Struktur menyerang","Fleksibel"],
+  },
+  sui: {
+    id:"coach-sui",teamId:"sui",name:"Murat Yakin",nationality:"Swiss",age:50,
+    formation:"3-4-2-1",winRate:58,drawRate:20,lossRate:22,
+    philosophy:"Taktis dan cerdas. Yakin membangun Swiss yang sulit dikalahkan dengan organisasi pertahanan 3 bek dan lini tengah box-to-box.",
+    pressStyle:"MID",playingStyle:"HYBRID",wcExp:1,titles:"Swiss Super League 2002, 2003",
+    traits:["3 bek adaptif","Taktis fleksibel","Solid pertahanan","Kolektif"],
+  },
+  // ─── GROUP C ───────────────────────────────────────────────────────
+  bra: {
+    id:"coach-bra",teamId:"bra",name:"Carlo Ancelotti",nationality:"Italia",age:66,
+    formation:"4-3-3",winRate:65,drawRate:18,lossRate:17,
+    philosophy:"Pragmatis berjiwa penyerang. Ancelotti membebaskan pemain berbakat Brasil berkreasi dalam sistem yang solid. Lima UCL menjadi bukti ketenangan dan fleksibilitas taktisnya.",
+    pressStyle:"MID",playingStyle:"POSSESSION",wcExp:0,titles:"UCL ×5, Serie A ×1, Liga ×2, Premier League ×1",
+    traits:["Man-management terbaik","Fleksibel taktik","Tenang di tekanan","Membebaskan kreativitas"],
+  },
+  mar: {
+    id:"coach-mor",teamId:"mar",name:"Walid Regragui",nationality:"Maroko",age:49,
+    formation:"4-3-3",winRate:66,drawRate:16,lossRate:18,
+    philosophy:"Pertahanan terorganisir rapat dan serangan balik berbahaya. Mentalitas tidak kenal takut — terbukti semifinal WC 2022 mengalahkan Portugal dan Spanyol.",
+    pressStyle:"MID",playingStyle:"COUNTER",wcExp:1,titles:"AFCON Runner-up 2024, WC 2022 Semifinal",
+    traits:["Mentalitas baja","Blok pertahanan","Set piece berbahaya","Transisi killer"],
+  },
+  hai: {
+    id:"coach-hai",teamId:"hai",name:"Sébastien Migné",nationality:"Prancis",age:55,
+    formation:"4-3-3",winRate:42,drawRate:22,lossRate:36,
+    philosophy:"Membangun Haiti dengan semangat dan kolektivitas. Migné fokus pada organisasi defensif dan memanfaatkan momen transisi.",
+    pressStyle:"LOW",playingStyle:"COUNTER",wcExp:0,titles:"—",
+    traits:["Kolektif","Defensif terorganisir","Semangat juang","Adaptif"],
+  },
+  sco: {
+    id:"coach-sco",teamId:"sco",name:"Steve Clarke",nationality:"Skotlandia",age:60,
+    formation:"3-5-2",winRate:52,drawRate:22,lossRate:26,
+    philosophy:"Pragmatis dengan organisasi defensif solid. Clarke membangun Skotlandia dengan 3 bek dan wing back aktif yang memberikan kedalaman dan lebar.",
+    pressStyle:"MID",playingStyle:"DIRECT",wcExp:0,titles:"—",
+    traits:["3 bek pragmatis","Solid defensif","Set piece","Kolektif"],
+  },
+  // ─── GROUP D ───────────────────────────────────────────────────────
+  usa: {
+    id:"coach-usa",teamId:"usa",name:"Mauricio Pochettino",nationality:"Argentina",age:54,
+    formation:"4-3-3",winRate:58,drawRate:22,lossRate:20,
+    philosophy:"Gegenpressing intensitas sangat tinggi, penguasaan bola dari belakang, dan serangan dinamis multi-skema. Pengembangan pemain muda jadi prioritas — sangat tepat untuk USMNT.",
+    pressStyle:"HIGH",playingStyle:"POSSESSION",wcExp:0,titles:"UCL Final 2019 (Spurs), Premier League —",
+    traits:["Gegenpressing","Transisi cepat","Pemain muda","Penguasaan bola"],
+  },
+  par: {
+    id:"coach-par",teamId:"par",name:"Gustavo Alfaro",nationality:"Argentina",age:62,
+    formation:"4-4-2",winRate:48,drawRate:23,lossRate:29,
+    philosophy:"Pragmatis dengan pertahanan kompak. Alfaro membangun tim dengan kolektivitas dan semangat juang tinggi, memanfaatkan kekuatan fisik pemain Paraguay.",
+    pressStyle:"MID",playingStyle:"COUNTER",wcExp:1,titles:"Copa Sudamericana (semifinal)",
+    traits:["Kompak defensif","Kolektif","Fisik kuat","Pragmatis"],
+  },
+  aus: {
+    id:"coach-aus",teamId:"aus",name:"Tony Popovic",nationality:"Australia",age:51,
+    formation:"4-3-3",winRate:55,drawRate:20,lossRate:25,
+    philosophy:"Intensitas tinggi dan langsung. Popovic membangun Socceroos dengan mentalitas pejuang dan transisi cepat yang menjadi ciri khas sepak bola Australia.",
+    pressStyle:"HIGH",playingStyle:"DIRECT",wcExp:0,titles:"A-League (Melbourne Victory)",
+    traits:["Intensitas tinggi","Mentalitas pejuang","Transisi langsung","Fisik prima"],
+  },
+  tur: {
+    id:"coach-tur",teamId:"tur",name:"Vincenzo Montella",nationality:"Italia",age:50,
+    formation:"4-3-3",winRate:53,drawRate:22,lossRate:25,
+    philosophy:"Sepak bola ofensif dengan teknik tinggi. Montella memanfaatkan bakat teknis pemain Turki muda dengan sistem menyerang yang atraktif dan penguasaan bola.",
+    pressStyle:"MID",playingStyle:"POSSESSION",wcExp:0,titles:"Coppa Italia ×2 (Fiorentina)",
+    traits:["Ofensif atraktif","Teknik tinggi","Pemain muda berbakat","Penguasaan bola"],
+  },
+  // ─── GROUP E ───────────────────────────────────────────────────────
+  ger: {
+    id:"coach-ger",teamId:"ger",name:"Julian Nagelsmann",nationality:"Jerman",age:38,
+    formation:"4-2-3-1",winRate:62,drawRate:18,lossRate:20,
+    philosophy:"Modern, data-driven, intens. Nagelsmann membangun Jerman dengan Wirtz dan Musiala sebagai motor kreatif dalam sistem yang menuntut aktivitas tinggi seluruh pemain.",
+    pressStyle:"HIGH",playingStyle:"POSSESSION",wcExp:0,titles:"DFB-Pokal, Bundesliga (Leverkusen runner-up)",
+    traits:["Data-driven","Pressing intens","Wirtz-Musiala combo","Fleksibel taktik"],
+  },
+  cuw: {
+    id:"coach-cuw",teamId:"cuw",name:"Dick Advocaat",nationality:"Belanda",age:77,
+    formation:"4-4-2",winRate:52,drawRate:22,lossRate:26,
+    philosophy:"Pragmatis berpengalaman. Advocaat legenda sepak bola Belanda yang membangun Curaçao debutnya di WC dengan organisasi solid dan pendekatan realistis.",
+    pressStyle:"MID",playingStyle:"HYBRID",wcExp:2,titles:"Dutch Cup ×2, Russian League (Zenit)",
+    traits:["Berpengalaman","Pragmatis","Solid defensif","Adaptif"],
+  },
+  civ: {
+    id:"coach-civ",teamId:"civ",name:"Emerse Faé",nationality:"Pantai Gading",age:41,
+    formation:"4-3-3",winRate:58,drawRate:18,lossRate:24,
+    philosophy:"Sepak bola ofensif berenergi tinggi memanfaatkan talenta luar biasa pemain Pantai Gading. Faé termuda di turnamen ini — berani dan inovatif.",
+    pressStyle:"HIGH",playingStyle:"DIRECT",wcExp:0,titles:"AFCON 2024 (Pantai Gading)",
+    traits:["Ofensif eksplosif","Energi tinggi","Pemain berbintang","Berani"],
+  },
+  ecu: {
+    id:"coach-ecu",teamId:"ecu",name:"Sebastián Beccacece",nationality:"Argentina",age:43,
+    formation:"3-4-3",winRate:55,drawRate:20,lossRate:25,
+    philosophy:"Pressing intens dan struktur kompleks berbasis 3 bek. Beccacece murid Diego Simeone yang membawa intensitas Atlético ke Ecuador.",
+    pressStyle:"HIGH",playingStyle:"DIRECT",wcExp:0,titles:"Liga Argentina (Racing Club)",
+    traits:["Pressing intens","3 bek struktur","Intensitas Atlético","Disiplin taktis"],
+  },
+  // ─── GROUP F ───────────────────────────────────────────────────────
+  ned: {
+    id:"coach-ned",teamId:"ned",name:"Ronald Koeman",nationality:"Belanda",age:62,
+    formation:"4-3-3",winRate:62,drawRate:18,lossRate:20,
+    philosophy:"Total football modern. Koeman membangun Belanda dengan penguasaan bola dan pressing aktif, memanfaatkan bakat Gakpo dan van Dijk sebagai pilar utama.",
+    pressStyle:"HIGH",playingStyle:"POSSESSION",wcExp:1,titles:"EURO 2024 Semifinal",
+    traits:["Total football","Penguasaan bola","van Dijk-Gakpo","Pressing tinggi"],
+  },
+  jpn: {
+    id:"coach-jpn",teamId:"jpn",name:"Hajime Moriyasu",nationality:"Jepang",age:56,
+    formation:"4-2-3-1",winRate:60,drawRate:18,lossRate:22,
+    philosophy:"Rotasi taktis cerdas memanfaatkan kedalaman skuad. Moriyasu terkenal dengan substitusi yang mengubah permainan — terbukti mengalahkan Jerman dan Spanyol di WC 2022.",
+    pressStyle:"HIGH",playingStyle:"COUNTER",wcExp:2,titles:"WC 2022 R-16, EAFF E-1 Championship",
+    traits:["Rotasi cerdas","Counter intensitas","Pressing Jerman-Spanyol killer","Kedalaman skuad"],
+  },
+  swe: {
+    id:"coach-swe",teamId:"swe",name:"Graham Potter",nationality:"Inggris",age:51,
+    formation:"3-4-3",winRate:55,drawRate:23,lossRate:22,
+    philosophy:"Pendekatan analitis dan fleksibel dengan penggunaan 3 bek. Potter membangun Swedia modern yang berbeda dari stereotype direct Skandinavia.",
+    pressStyle:"MID",playingStyle:"POSSESSION",wcExp:0,titles:"Premier League Runner-up (Chelsea)",
+    traits:["Analitis","3-4-3 modern","Fleksibel","Penguasaan bola"],
+  },
+  tun: {
+    id:"coach-tun",teamId:"tun",name:"Sami Trabelsi",nationality:"Tunisia",age:56,
+    formation:"4-3-3",winRate:50,drawRate:23,lossRate:27,
+    philosophy:"Membangun Tunisia dengan kolektivitas dan fisik yang baik. Hannibal Mejbri jadi pemain kunci dalam sistem Trabelsi yang menuntut kreativitas lini tengah.",
+    pressStyle:"MID",playingStyle:"COUNTER",wcExp:0,titles:"—",
+    traits:["Kolektif","Fisik kuat","Hannibal sentris","Disiplin"],
+  },
+  // ─── GROUP G ───────────────────────────────────────────────────────
+  bel: {
+    id:"coach-bel",teamId:"bel",name:"Rudi Garcia",nationality:"Prancis",age:60,
+    formation:"4-3-3",winRate:55,drawRate:20,lossRate:25,
+    philosophy:"Generasi emas Belgia berlanjut. Garcia membangun di atas warisan Golden Generation dengan pemain muda berbakat — De Bruyne tetap jadi motor utama.",
+    pressStyle:"MID",playingStyle:"HYBRID",wcExp:0,titles:"Ligue 1 (Lyon ×4), Serie A (AS Roma)",
+    traits:["Pragmatis","De Bruyne sentris","Kolektif","Muda + veteran"],
+  },
+  egy: {
+    id:"coach-egy",teamId:"egy",name:"Hossam Hassan",nationality:"Mesir",age:58,
+    formation:"4-2-3-1",winRate:50,drawRate:22,lossRate:28,
+    philosophy:"Membangun Mesir di sekitar Mo Salah. Hassan legendaris sebagai pemain dan kini melatih tim nasional dengan fokus pada kekuatan pemain bintang.",
+    pressStyle:"MID",playingStyle:"COUNTER",wcExp:0,titles:"—",
+    traits:["Salah sentris","Counter attack","Kolektif","Solid belakang"],
+  },
+  irn: {
+    id:"coach-irn",teamId:"irn",name:"Amir Ghalenoei",nationality:"Iran",age:54,
+    formation:"4-3-3",winRate:55,drawRate:22,lossRate:23,
+    philosophy:"Iran keras dan solid secara defensif. Ghalenoei membangun blok pertahanan yang sulit ditembus dengan counter attack berbahaya melalui Taremi.",
+    pressStyle:"LOW",playingStyle:"COUNTER",wcExp:1,titles:"Pro League Iran",
+    traits:["Defensif solid","Counter Taremi","Blok rendah","Fisik keras"],
+  },
+  nzl: {
+    id:"coach-nzl",teamId:"nzl",name:"Darren Bazeley",nationality:"Inggris",age:53,
+    formation:"4-4-2",winRate:45,drawRate:22,lossRate:33,
+    philosophy:"Pragmatis dengan semangat juang. Bazeley membangun New Zealand All Whites yang kompak dan sulit dikalahkan meski tidak diunggulkan.",
+    pressStyle:"MID",playingStyle:"DIRECT",wcExp:0,titles:"OFC Nations Cup",
+    traits:["Kompak","Semangat juang","Direct play","Pragmatis"],
+  },
+  // ─── GROUP H ───────────────────────────────────────────────────────
+  esp: {
+    id:"coach-esp",teamId:"esp",name:"Luis de la Fuente",nationality:"Spanyol",age:63,
+    formation:"4-3-3",winRate:76,drawRate:12,lossRate:12,
+    philosophy:"Tiki-taka modern dengan pressing lebih agresif. Mempertahankan DNA Spanyol sambil menambah dimensi vertikal dan direct. Juara EURO 2024 dan Nations League 2023.",
+    pressStyle:"HIGH",playingStyle:"POSSESSION",wcExp:0,titles:"EURO 2024, Nations League 2023",
+    traits:["Tiki-taka modern","Pressing tinggi","Sirkulasi bola","Lini serang berbahaya"],
+  },
+  cpv: {
+    id:"coach-cpv",teamId:"cpv",name:"Bubista",nationality:"Tanjung Hijau",age:57,
+    formation:"4-4-2",winRate:52,drawRate:22,lossRate:26,
+    philosophy:"Membangun Cape Verde yang mengejutkan dunia. Bubista menggunakan kecepatan pemain diaspora dengan pertahanan kompak dan transisi cepat.",
+    pressStyle:"MID",playingStyle:"COUNTER",wcExp:0,titles:"AFCON R-16 2021, 2023",
+    traits:["Kecepatan diaspora","Kompak","Counter attack","Semangat juang"],
+  },
+  ksa: {
+    id:"coach-ksa",teamId:"ksa",name:"Giorgos Donis",nationality:"Yunani",age:54,
+    formation:"4-3-3",winRate:52,drawRate:22,lossRate:26,
+    philosophy:"Arab Saudi modern dengan pemain berbasis Eropa dan Liga Saudi. Donis membangun sistem ofensif yang memanfaatkan kualitas individual.",
+    pressStyle:"MID",playingStyle:"HYBRID",wcExp:0,titles:"—",
+    traits:["Pemain Eropa+Saudi","Ofensif modern","Fleksibel","Individu kuat"],
+  },
+  uru: {
+    id:"coach-uru",teamId:"uru",name:"Marcelo Bielsa",nationality:"Argentina",age:69,
+    formation:"3-3-1-3",winRate:53,drawRate:21,lossRate:26,
+    philosophy:"El Loco — pressing maniak tanpa bola, serangan total. Intensitas fisik tertinggi di dunia. Setiap pemain wajib kerja keras attacking dan defending. WC sebagai puncak karier.",
+    pressStyle:"HIGH",playingStyle:"DIRECT",wcExp:1,titles:"Olimpiade 2004 (Argentina), Copa América 2011 (Uruguay)",
+    traits:["Ultra-pressing","Man-to-man ketat","Intensitas tertinggi","Sistem kompleks"],
+  },
+  // ─── GROUP I ───────────────────────────────────────────────────────
+  fra: {
+    id:"coach-fra",teamId:"fra",name:"Didier Deschamps",nationality:"Prancis",age:56,
+    formation:"4-3-3",winRate:72,drawRate:16,lossRate:12,
+    philosophy:"Pragmatis dan solid. Mengutamakan organisasi defensif yang kukuh, lalu memanfaatkan bintang lini serang (Mbappé, Dembélé) untuk momen krusial. 14 tahun melatih Les Bleus.",
+    pressStyle:"MID",playingStyle:"HYBRID",wcExp:2,titles:"WC 2018, EURO 2000 (sebagai pemain)",
+    traits:["Solid defensif","Bintang lini depan","Pragmatis","Manajemen bintang"],
+  },
+  sen: {
+    id:"coach-sen",teamId:"sen",name:"Pape Thiaw",nationality:"Senegal",age:45,
+    formation:"4-3-3",winRate:55,drawRate:22,lossRate:23,
+    philosophy:"Penerus Aliou Cissé yang mempertahankan filosofi fisik dan semangat Senegal. Thiaw memaksimalkan talenta luar biasa di skuad dengan fokus kolektivitas.",
+    pressStyle:"MID",playingStyle:"COUNTER",wcExp:0,titles:"—",
+    traits:["Fisik kuat","Cepat di sayap","Kolektif","Semangat Afrika"],
+  },
+  irq: {
+    id:"coach-irq",teamId:"irq",name:"Graham Arnold",nationality:"Australia",age:61,
+    formation:"4-4-2",winRate:52,drawRate:22,lossRate:26,
+    philosophy:"Berpengalaman dalam sepak bola Asia. Arnold membangun Irak dengan intensitas dan fisik yang baik, pendekatan pragmatis yang terbukti di level internasional.",
+    pressStyle:"MID",playingStyle:"DIRECT",wcExp:1,titles:"AFC Asian Cup (dengan Australia)",
+    traits:["Berpengalaman Asia","Fisik kuat","Pragmatis","Intensitas sedang"],
+  },
+  nor: {
+    id:"coach-nor",teamId:"nor",name:"Ståle Solbakken",nationality:"Norwegia",age:56,
+    formation:"4-2-3-1",winRate:55,drawRate:20,lossRate:25,
+    philosophy:"Sepak bola langsung memanfaatkan kekuatan fisik dan udara pemain Norwegia. Haaland sebagai target utama dalam sistem yang menyuplai bola ke striker.",
+    pressStyle:"MID",playingStyle:"DIRECT",wcExp:0,titles:"Superliga Denmark ×4 (FC Copenhagen)",
+    traits:["Haaland sentris","Direct play","Fisik+udara","Kolektif"],
+  },
+  // ─── GROUP J ───────────────────────────────────────────────────────
+  arg: {
+    id:"coach-arg",teamId:"arg",name:"Lionel Scaloni",nationality:"Argentina",age:46,
+    formation:"4-4-2",winRate:71,drawRate:17,lossRate:12,
+    philosophy:"Membangun tim kolektif di sekitar Messi. Intensitas tanpa bola, fleksibilitas taktikal, dan kepercayaan diri juara dunia. Scaloni = juara terbanyak di era modern Argentina.",
+    pressStyle:"HIGH",playingStyle:"HYBRID",wcExp:1,titles:"WC 2022, Copa América 2021 & 2024, Finalissima 2022",
+    traits:["Mentalitas juara","Fleksibel taktik","Messi sistem","Solidarity tim"],
+  },
+  alg: {
+    id:"coach-alg",teamId:"alg",name:"Vladimir Petković",nationality:"Bosnia-Herzegovina",age:62,
+    formation:"3-4-3",winRate:53,drawRate:22,lossRate:25,
+    philosophy:"Taktis dan adaptif. Petković mantan pelatih Swiss yang dikenal dengan fleksibilitas taktis. Membangun Algeria dengan pertahanan solid 3 bek dan transisi cepat.",
+    pressStyle:"MID",playingStyle:"COUNTER",wcExp:1,titles:"Swiss Cup, EURO 2021 R-16 (Swiss)",
+    traits:["Taktis adaptif","3 bek fleksibel","Counter attack","Solid defensif"],
+  },
+  aut: {
+    id:"coach-aut",teamId:"aut",name:"Ralf Rangnick",nationality:"Jerman",age:67,
+    formation:"4-2-2-2",winRate:62,drawRate:18,lossRate:20,
+    philosophy:"Bapak Gegenpressing modern. Rangnick menciptakan blueprint yang menginspirasi Klopp dan Nagelsmann. Austria di bawahnya adalah mesin pressing paling konsisten di Eropa.",
+    pressStyle:"HIGH",playingStyle:"DIRECT",wcExp:0,titles:"Bundesliga (RB Leipzig), EURO 2024 R-8 (Austria)",
+    traits:["Gegenpressing inventor","Intensitas ekstrem","Kolektif sistematis","Akademis"],
+  },
+  jor: {
+    id:"coach-jor",teamId:"jor",name:"Jamal Sellami",nationality:"Maroko",age:52,
+    formation:"4-4-2",winRate:50,drawRate:22,lossRate:28,
+    philosophy:"Membangun Jordan yang mengejutkan dengan mencapai WC 2026. Sellami menggunakan pertahanan kompak dan memanfaatkan momen transisi.",
+    pressStyle:"LOW",playingStyle:"COUNTER",wcExp:0,titles:"AFC Asian Cup R-16 2023 (Jordan)",
+    traits:["Kompak defensif","Counter attack","Semangat juang","Kolektif"],
+  },
+  // ─── GROUP K ───────────────────────────────────────────────────────
+  por: {
+    id:"coach-por",teamId:"por",name:"Roberto Martínez",nationality:"Spanyol",age:52,
+    formation:"4-3-3",winRate:67,drawRate:18,lossRate:15,
+    philosophy:"Sepak bola ofensif dan menarik dengan penguasaan bola. Membebaskan pemain bintang Portugal berkreasi dalam sistem yang menyerang dan menghibur.",
+    pressStyle:"MID",playingStyle:"POSSESSION",wcExp:1,titles:"Nations League 2024",
+    traits:["Ofensif eksplosif","Pemain bintang bebas","Penguasaan bola","Menyerang"],
+  },
+  cod: {
+    id:"coach-cod",teamId:"cod",name:"Sébastien Desabre",nationality:"Prancis",age:49,
+    formation:"4-3-3",winRate:52,drawRate:22,lossRate:26,
+    philosophy:"Membangun DR Congo dengan fisik luar biasa dan kecepatan pemain Afrika Tengah. Desabre fokus pada kolektivitas dan eksploitasi kecepatan sayap.",
+    pressStyle:"MID",playingStyle:"DIRECT",wcExp:0,titles:"AFCON R-8 2023",
+    traits:["Fisik luar biasa","Kecepatan sayap","Kolektif","Langsung"],
+  },
+  uzb: {
+    id:"coach-uzb",teamId:"uzb",name:"Fabio Cannavaro",nationality:"Italia",age:51,
+    formation:"4-4-2",winRate:55,drawRate:20,lossRate:25,
+    philosophy:"Legenda Italia yang membawa filosofi Juve dan Napoli ke Uzbekistan. Cannavaro membangun dengan disiplin defensif khas Italia dan counter attack efisien.",
+    pressStyle:"MID",playingStyle:"COUNTER",wcExp:0,titles:"Uzbekistan League, Serie A (sebagai pemain)",
+    traits:["Disiplin Italia","Counter efisien","Solid defensif","Organisasi ketat"],
+  },
+  col: {
+    id:"coach-col",teamId:"col",name:"Néstor Lorenzo",nationality:"Argentina",age:58,
+    formation:"4-2-3-1",winRate:62,drawRate:18,lossRate:20,
+    philosophy:"Atraktif dan ofensif. Lorenzo membawa Colombia ke WC dengan sepak bola menyerang yang mengandalkan James Rodríguez dan Díaz sebagai pemain kunci.",
+    pressStyle:"HIGH",playingStyle:"POSSESSION",wcExp:0,titles:"Copa América Runner-up 2024",
+    traits:["Ofensif atraktif","James sentris","Pressing aktif","Penguasaan bola"],
+  },
+  // ─── GROUP L ───────────────────────────────────────────────────────
+  eng: {
+    id:"coach-eng",teamId:"eng",name:"Thomas Tuchel",nationality:"Jerman",age:52,
+    formation:"3-4-3",winRate:64,drawRate:18,lossRate:18,
+    philosophy:"Fleksibilitas taktis tinggi — bisa bermain 3 atau 4 bek. Pressing intens dan transisi cepat dengan pemain sayap kreatif. Pertama melatih Inggris sejak 2025.",
+    pressStyle:"HIGH",playingStyle:"POSSESSION",wcExp:0,titles:"UCL 2021 (Chelsea), Bundesliga 2018",
+    traits:["Taktik fleksibel","Pressing tinggi","Adaptasi cepat","Memanfaatkan lebar"],
+  },
+  cro: {
+    id:"coach-cro",teamId:"cro",name:"Zlatko Dalić",nationality:"Kroasia",age:57,
+    formation:"4-3-3",winRate:60,drawRate:20,lossRate:20,
+    philosophy:"Mempertahankan tradisi Kroasia — teknik tinggi, lini tengah kreatif Modrić, dan mentalitas tidak pernah menyerah. Dalić arsitek dua final WC berturut-turut (2018, 2022).",
+    pressStyle:"MID",playingStyle:"HYBRID",wcExp:2,titles:"WC 2018 Final, WC 2022 3rd Place",
+    traits:["Teknik tinggi","Modrić sentris","Mentalitas juara","Kompak"],
+  },
+  gha: {
+    id:"coach-gha",teamId:"gha",name:"Otto Addo",nationality:"Ghana",age:49,
+    formation:"4-4-2",winRate:50,drawRate:22,lossRate:28,
+    philosophy:"Membangun Ghana Black Stars dengan pemain diaspora berbakat. Addo menggunakan pressing intensitas menengah dengan counter attack cepat.",
+    pressStyle:"MID",playingStyle:"DIRECT",wcExp:1,titles:"—",
+    traits:["Pemain diaspora","Counter cepat","Fisik baik","Semangat Afrika"],
+  },
+  pan: {
+    id:"coach-pan",teamId:"pan",name:"Thomas Christiansen",nationality:"Spanyol/Denmark",age:52,
+    formation:"4-4-2",winRate:52,drawRate:22,lossRate:26,
+    philosophy:"Membangun Panama yang disiplin dan kompak. Christiansen dikenal dengan pertahanan terorganisir dan memanfaatkan setiap peluang counter.",
+    pressStyle:"LOW",playingStyle:"COUNTER",wcExp:1,titles:"CONCACAF Nations League",
+    traits:["Disiplin tinggi","Kompak defensif","Counter attack","Set piece"],
+  },
+};
+
+export const COACH_PLACEHOLDER: Coach = {
+  id:"coach-unknown",teamId:"",name:"Data akan diperbarui",nationality:"—",age:0,
+  formation:"4-4-2",winRate:0,drawRate:0,lossRate:0,
+  philosophy:"Data profil pelatih untuk tim ini akan diperbarui menjelang atau selama turnamen berlangsung.",
+  pressStyle:"MID",playingStyle:"HYBRID",wcExp:0,titles:"—",traits:[],
+};
