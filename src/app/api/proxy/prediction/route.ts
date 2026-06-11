@@ -14,6 +14,7 @@ export interface APIFPredictionData {
 
 export async function GET(req: NextRequest) {
   const fixtureId = req.nextUrl.searchParams.get("fixtureId") ?? "";
+  const apifKey = req.nextUrl.searchParams.get("apifKey") ?? undefined;
   const numericId = fixtureId.replace(/^\D+/, "");
 
   if (!numericId) {
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const data = await apifPredictions(numericId);
+    const data = await apifPredictions(numericId, apifKey);
     const predictions = data?.response?.[0]?.predictions;
     if (!predictions) return NextResponse.json({ source: "none", data: null });
 

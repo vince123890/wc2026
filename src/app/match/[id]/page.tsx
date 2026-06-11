@@ -184,8 +184,8 @@ export default function MatchPage({ params }: { params: { id: string } }) {
           ? <FormationPitch lineups={lineups} homeId={fixture.homeId!} awayId={fixture.awayId!} />
           : <EmptyState
               title="Lineup belum tersedia"
-              detail="Lineup biasanya dirilis ~1 jam sebelum kickoff. Butuh APIF_KEY di .env.local (API-Football gratis)."
-              hint="Isi APIF_KEY untuk mengaktifkan. Free tier: 100 req/hari." />
+              detail="Lineup biasanya dirilis ~1 jam sebelum kickoff. Butuh API key API-Football (gratis)."
+              hint="Isi API Key API-Football di Pengaturan untuk mengaktifkan. Free tier: 100 req/hari." />
       )}
 
       {/* ── AI & PREDIKSI ── */}

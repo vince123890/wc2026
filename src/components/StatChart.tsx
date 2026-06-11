@@ -37,7 +37,7 @@ export function StatRadarChart({ home, away }: Props) {
         <p className="text-xs text-ink-low">
           Chart statistik akan tersedia setelah API-Football dikonfigurasi (gratis, 100 req/hari).
         </p>
-        <p className="mt-1 text-[11px] text-ink-low">Isi <code className="text-gold">APIF_KEY</code> di .env.local</p>
+        <p className="mt-1 text-[11px] text-ink-low">Isi API Key API-Football di Pengaturan, atau <code className="text-gold">APIF_KEY</code> di .env.local</p>
       </div>
     );
   }

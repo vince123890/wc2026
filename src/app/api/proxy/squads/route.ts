@@ -17,6 +17,7 @@ export interface SquadPlayer {
 
 export async function GET(req: NextRequest) {
   const teamId = req.nextUrl.searchParams.get("teamId") ?? "";
+  const apifKey = req.nextUrl.searchParams.get("apifKey") ?? undefined;
   const numericId = APIF_TEAM_IDS[teamId];
 
   if (!numericId) {
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const data = await apifSquads(String(numericId));
+    const data = await apifSquads(String(numericId), apifKey);
     const players = data?.response?.[0]?.players;
     if (!players) return NextResponse.json({ source: "none", data: null });
 

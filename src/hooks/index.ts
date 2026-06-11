@@ -4,12 +4,20 @@ import { useQuery } from "@tanstack/react-query";
 import type { MatchLineups, MatchEvent, Coach, Team } from "@/lib/types";
 import type { RealFixture } from "@/lib/wc2026-data";
 import { WC2026_FIXTURES } from "@/lib/wc2026-data";
+import { useStore } from "@/lib/store";
 
 // Generic fetch — route handlers return { source, data }
 async function fetchProxy<T>(url: string): Promise<{ source: string; data: T }> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json() as Promise<{ source: string; data: T }>;
+}
+
+// Tambahkan apifKey BYOK (Settings) ke query string jika diisi user
+function withApifKey(url: string, apifKey: string | null): string {
+  if (!apifKey) return url;
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}apifKey=${encodeURIComponent(apifKey)}`;
 }
 
 // Fixtures: pakai embedded WC2026 sebagai data utama,
@@ -35,9 +43,10 @@ export function useFixtures() {
 }
 
 export function useLineups(matchId: string, enabled = true) {
+  const apifKey = useStore((s) => s.apifKey);
   return useQuery({
-    queryKey: ["lineups", matchId],
-    queryFn: () => fetchProxy<MatchLineups | null>(`/api/proxy/lineups?matchId=${matchId}`),
+    queryKey: ["lineups", matchId, apifKey],
+    queryFn: () => fetchProxy<MatchLineups | null>(withApifKey(`/api/proxy/lineups?matchId=${matchId}`, apifKey)),
     enabled: enabled && !!matchId,
   });
 }
@@ -53,10 +62,11 @@ export function useCoach(teamId: string | undefined) {
 
 // Skuad lengkap (26 pemain) — enrichment dari API-Football, opsional (Tier 2 addendum)
 export function useSquad(teamId: string | undefined) {
+  const apifKey = useStore((s) => s.apifKey);
   return useQuery({
-    queryKey: ["squad", teamId],
+    queryKey: ["squad", teamId, apifKey],
     queryFn: () => fetchProxy<import("@/app/api/proxy/squads/route").SquadPlayer[] | null>(
-      `/api/proxy/squads?teamId=${teamId}`
+      withApifKey(`/api/proxy/squads?teamId=${teamId}`, apifKey)
     ),
     enabled: !!teamId,
     staleTime: 24 * 60 * 60_000, // 24 jam — skuad jarang berubah
@@ -73,18 +83,20 @@ export function useTeams() {
 }
 
 export function useStandings() {
+  const apifKey = useStore((s) => s.apifKey);
   return useQuery({
-    queryKey: ["standings"],
-    queryFn: () => fetchProxy<unknown>("/api/proxy/stats?kind=standings"),
+    queryKey: ["standings", apifKey],
+    queryFn: () => fetchProxy<unknown>(withApifKey("/api/proxy/stats?kind=standings", apifKey)),
     staleTime: 60_000,
   });
 }
 
 // Live events — polling 30s saat LIVE (ARCH-R04), pause saat tab hidden
 export function useMatchEvents(matchId: string, isLive: boolean) {
+  const apifKey = useStore((s) => s.apifKey);
   return useQuery({
-    queryKey: ["events", matchId],
-    queryFn: () => fetchProxy<MatchEvent[]>(`/api/proxy/events?matchId=${matchId}`),
+    queryKey: ["events", matchId, apifKey],
+    queryFn: () => fetchProxy<MatchEvent[]>(withApifKey(`/api/proxy/events?matchId=${matchId}`, apifKey)),
     refetchInterval: isLive ? 30_000 : false,
     refetchIntervalInBackground: false,
     enabled: !!matchId,
@@ -93,10 +105,11 @@ export function useMatchEvents(matchId: string, isLive: boolean) {
 
 // Second-opinion prediction — API-Football /predictions (Tier 2 addendum)
 export function useAPIFPrediction(fixtureId: string, enabled = true) {
+  const apifKey = useStore((s) => s.apifKey);
   return useQuery({
-    queryKey: ["apif-prediction", fixtureId],
+    queryKey: ["apif-prediction", fixtureId, apifKey],
     queryFn: () => fetchProxy<import("@/app/api/proxy/prediction/route").APIFPredictionData | null>(
-      `/api/proxy/prediction?fixtureId=${fixtureId}`
+      withApifKey(`/api/proxy/prediction?fixtureId=${fixtureId}`, apifKey)
     ),
     enabled: enabled && !!fixtureId,
     staleTime: 60 * 60_000,

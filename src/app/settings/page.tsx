@@ -12,8 +12,9 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 export default function SettingsPage() {
-  const { apiKey, apiProvider, setApiKey, profile, setProfile, hydrate, predictions } = useStore();
+  const { apiKey, apiProvider, setApiKey, apifKey, setApifKey, profile, setProfile, hydrate, predictions } = useStore();
   const [keyInput, setKeyInput]   = useState("");
+  const [apifKeyInput, setApifKeyInput] = useState("");
   const [nick, setNick]           = useState("");
   const [provider, setProvider]   = useState<"claude" | "gemini">("claude");
   const [showWizard, setShowWizard] = useState(false);
@@ -25,7 +26,8 @@ export default function SettingsPage() {
     setKeyInput(apiKey ?? "");
     setProvider(apiProvider);
     setNick(profile.nickname);
-  }, [apiKey, apiProvider, profile.nickname]);
+    setApifKeyInput(apifKey ?? "");
+  }, [apiKey, apiProvider, profile.nickname, apifKey]);
 
   // FR-22 — Export tebakan JSON
   function exportPredictions() {
@@ -123,6 +125,28 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* API-Football Key (BYOK) — lineup, events, standings, skuad lengkap */}
+      <section className="rounded-xl border border-pitch-700 bg-pitch-900/60 p-4">
+        <h2 className="mb-2 text-sm font-semibold text-ink-hi">API Key API-Football</h2>
+        <p className="mb-3 text-xs text-ink-mid">
+          {apifKey
+            ? "Key API-Football aktif di perangkat ini — lineup, events, standings & skuad lengkap tersedia."
+            : "Belum ada key — fitur lineup, skuad lengkap, dan prediksi pembanding nonaktif kecuali server sudah diisi APIF_KEY."}
+        </p>
+        <div className="flex gap-2">
+          <input type="password" value={apifKeyInput} onChange={(e) => setApifKeyInput(e.target.value)}
+            placeholder="API-Football key…"
+            className="flex-1 rounded-lg border border-pitch-700 bg-pitch-950 px-3 py-2 text-sm text-ink-hi outline-none focus:border-gold/50" />
+          <button onClick={() => setApifKey(apifKeyInput.trim() || null)}
+            className="rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-pitch-950">
+            Simpan
+          </button>
+        </div>
+        <p className="mt-2 text-[11px] text-ink-low">
+          Daftar gratis di <a href="https://api-football.com" target="_blank" rel="noreferrer" className="text-gold underline">api-football.com</a> → Dashboard → API Key (100 req/hari). Disimpan di perangkat ini saja.
+        </p>
+      </section>
+
       {/* Export / Import (FR-22) */}
       <section className="rounded-xl border border-pitch-700 bg-pitch-900/60 p-4">
         <h2 className="mb-2 text-sm font-semibold text-ink-hi">Export & Import Tebakan</h2>
@@ -147,7 +171,7 @@ export default function SettingsPage() {
         <h2 className="mb-2 text-sm font-semibold text-gold">Setup API Keys — Panduan Cepat</h2>
         <div className="space-y-2 text-xs text-ink-mid">
           <p><span className="text-ink-hi font-medium">WC26_JWT</span> — Daftar gratis di <a href="https://worldcup26.ir" target="_blank" rel="noreferrer" className="text-gold underline">worldcup26.ir</a> → Login → salin JWT token (berlaku 84 hari) → isi di <code className="text-gold">.env.local</code></p>
-          <p><span className="text-ink-hi font-medium">APIF_KEY</span> — Daftar gratis di <a href="https://api-football.com" target="_blank" rel="noreferrer" className="text-gold underline">api-football.com</a> → Dashboard → API Key (100 req/hari, cukup untuk lineup & events)</p>
+          <p><span className="text-ink-hi font-medium">APIF_KEY</span> — Daftar gratis di <a href="https://api-football.com" target="_blank" rel="noreferrer" className="text-gold underline">api-football.com</a> → Dashboard → API Key (100 req/hari, cukup untuk lineup & events). Bisa diisi di <code className="text-gold">.env.local</code> (server) atau langsung di bagian &quot;API Key API-Football&quot; di atas (BYOK, per perangkat).</p>
           <p><span className="text-ink-hi font-medium">ANTHROPIC_API_KEY</span> — <a href="https://console.anthropic.com" target="_blank" rel="noreferrer" className="text-gold underline">console.anthropic.com</a> → API Keys. Atau input di atas (BYOK, disimpan di perangkat).</p>
           <p><span className="text-ink-hi font-medium">Supabase</span> — Buat project gratis di <a href="https://supabase.com" target="_blank" rel="noreferrer" className="text-gold underline">supabase.com</a> → Settings → API → salin URL & anon key. Jalankan SQL di README.</p>
         </div>

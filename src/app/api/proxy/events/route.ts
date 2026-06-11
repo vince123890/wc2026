@@ -8,11 +8,12 @@ export const maxDuration = 30;
 export async function GET(req: NextRequest) {
   const matchId = req.nextUrl.searchParams.get("matchId") ?? "";
   const since   = req.nextUrl.searchParams.get("since");
+  const apifKey = req.nextUrl.searchParams.get("apifKey") ?? undefined;
 
   // Coba API eksternal menggunakan matchId. Untuk API-Football kita butuh fixture id numerik.
   const result = await firstAvailable([
     { source: "worldcup26.ir", run: () => wc26Events(matchId) },
-    { source: "api-football",  run: () => apifEvents(matchId.replace(/^\D+/, "")) },
+    { source: "api-football",  run: () => apifEvents(matchId.replace(/^\D+/, ""), apifKey) },
   ]);
 
   if (result) return NextResponse.json({ source: result.source, data: result.data });

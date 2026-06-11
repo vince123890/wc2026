@@ -16,6 +16,7 @@ interface AppState {
   predictions: Record<string, Prediction | EvaluatedPrediction>;
   apiKey: string | null;
   apiProvider: "claude" | "gemini";
+  apifKey: string | null;
   hydrated: boolean;
   onboardingDone: boolean;
 
@@ -24,12 +25,13 @@ interface AppState {
   savePrediction: (p: Prediction) => void;
   evaluatePrediction: (matchId: string, breakdown: ScoreBreakdown, finalHome: number, finalAway: number) => void;
   setApiKey: (key: string | null, provider: "claude" | "gemini") => void;
+  setApifKey: (key: string | null) => void;
   setOnboardingDone: () => void;
 }
 
 const LS_KEY = "wc2026:state:v2";
 
-function persist(state: Pick<AppState, "profile" | "predictions" | "apiKey" | "apiProvider" | "onboardingDone">) {
+function persist(state: Pick<AppState, "profile" | "predictions" | "apiKey" | "apiProvider" | "apifKey" | "onboardingDone">) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch { /* incognito */ }
 }
 
@@ -46,6 +48,7 @@ export const useStore = create<AppState>((set, get) => ({
   predictions: {},
   apiKey: null,
   apiProvider: "claude",
+  apifKey: null,
   hydrated: false,
   onboardingDone: false,
 
@@ -94,6 +97,11 @@ export const useStore = create<AppState>((set, get) => ({
   setApiKey: (apiKey, apiProvider) => {
     set({ apiKey, apiProvider });
     persist({ ...get(), apiKey, apiProvider });
+  },
+
+  setApifKey: (apifKey) => {
+    set({ apifKey });
+    persist({ ...get(), apifKey });
   },
 
   setOnboardingDone: () => {

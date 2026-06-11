@@ -8,11 +8,12 @@ export const maxDuration = 30;
 
 export async function GET(req: NextRequest) {
   const kind = req.nextUrl.searchParams.get("kind") ?? "teams";
+  const apifKey = req.nextUrl.searchParams.get("apifKey") ?? undefined;
 
   if (kind === "standings") {
     const result = await firstAvailable([
       { source: "worldcup26.ir", run: () => wc26Groups() },
-      { source: "api-football",  run: () => apifStandings() },
+      { source: "api-football",  run: () => apifStandings(apifKey) },
     ]);
     if (result) return NextResponse.json({ source: result.source, data: result.data });
     // Hitung dari data embedded WC2026 (paling akurat untuk klasemen)

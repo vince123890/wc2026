@@ -8,6 +8,7 @@ export const maxDuration = 30;
 
 export async function GET(req: NextRequest) {
   const matchId = req.nextUrl.searchParams.get("matchId") ?? "";
+  const apifKey = req.nextUrl.searchParams.get("apifKey") ?? undefined;
   // Untuk API-Football pakai fixture id numerik
   const numericId = matchId.replace(/^\D+/, "");
 
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
     {
       source: "api-football",
       run: async () => {
-        const data = await apifLineups(numericId);
+        const data = await apifLineups(numericId, apifKey);
         const mapped = mapAPIFootballLineup(data?.response ?? []);
         if (!mapped) throw new Error("no lineup data");
         return mapped;

@@ -41,59 +41,60 @@ export async function wc26LiveScore() {
 
 // ── API-Football (GRATIS 100 req/hari — butuh APIF_KEY dari api-football.com) ─
 // WC 2026 = league_id 1, season 2026
-function apifHeaders(): Record<string, string> | null {
-  const key = process.env.APIF_KEY;
+// clientKey: opsional, BYOK dari user (Settings) — dipakai jika APIF_KEY server kosong.
+function apifHeaders(clientKey?: string): Record<string, string> | null {
+  const key = process.env.APIF_KEY || clientKey;
   return key ? { "x-apisports-key": key } : null;
 }
-export async function apifFixtures(params = "") {
-  const h = apifHeaders();
+export async function apifFixtures(params = "", clientKey?: string) {
+  const h = apifHeaders(clientKey);
   if (!h) throw new Error("APIF_KEY not configured");
   return fetchJSON(`${APIF_BASE}/fixtures?league=1&season=2026${params}`, h);
 }
-export async function apifLineups(fixtureId: string) {
-  const h = apifHeaders();
+export async function apifLineups(fixtureId: string, clientKey?: string) {
+  const h = apifHeaders(clientKey);
   if (!h) throw new Error("APIF_KEY not configured");
   return fetchJSON(`${APIF_BASE}/fixtures/lineups?fixture=${fixtureId}`, h);
 }
-export async function apifEvents(fixtureId: string) {
-  const h = apifHeaders();
+export async function apifEvents(fixtureId: string, clientKey?: string) {
+  const h = apifHeaders(clientKey);
   if (!h) throw new Error("APIF_KEY not configured");
   return fetchJSON(`${APIF_BASE}/fixtures/events?fixture=${fixtureId}`, h);
 }
-export async function apifStandings() {
-  const h = apifHeaders();
+export async function apifStandings(clientKey?: string) {
+  const h = apifHeaders(clientKey);
   if (!h) throw new Error("APIF_KEY not configured");
   return fetchJSON(`${APIF_BASE}/standings?league=1&season=2026`, h);
 }
-export async function apifPlayers(teamId: string) {
-  const h = apifHeaders();
+export async function apifPlayers(teamId: string, clientKey?: string) {
+  const h = apifHeaders(clientKey);
   if (!h) throw new Error("APIF_KEY not configured");
   return fetchJSON(`${APIF_BASE}/players?league=1&season=2026&team=${teamId}`, h);
 }
 
 // ── Tier 2 (Addendum) — gratis, butuh APIF_KEY, dalam kuota 100 req/hari ────
-export async function apifPredictions(fixtureId: string) {
-  const h = apifHeaders();
+export async function apifPredictions(fixtureId: string, clientKey?: string) {
+  const h = apifHeaders(clientKey);
   if (!h) throw new Error("APIF_KEY not configured");
   return fetchJSON(`${APIF_BASE}/predictions?fixture=${fixtureId}`, h);
 }
-export async function apifSquads(teamId: string) {
-  const h = apifHeaders();
+export async function apifSquads(teamId: string, clientKey?: string) {
+  const h = apifHeaders(clientKey);
   if (!h) throw new Error("APIF_KEY not configured");
   return fetchJSON(`${APIF_BASE}/players/squads?team=${teamId}`, h);
 }
-export async function apifTeamStatistics(teamId: string) {
-  const h = apifHeaders();
+export async function apifTeamStatistics(teamId: string, clientKey?: string) {
+  const h = apifHeaders(clientKey);
   if (!h) throw new Error("APIF_KEY not configured");
   return fetchJSON(`${APIF_BASE}/teams/statistics?league=1&season=2026&team=${teamId}`, h);
 }
-export async function apifHeadToHead(id1: string, id2: string) {
-  const h = apifHeaders();
+export async function apifHeadToHead(id1: string, id2: string, clientKey?: string) {
+  const h = apifHeaders(clientKey);
   if (!h) throw new Error("APIF_KEY not configured");
   return fetchJSON(`${APIF_BASE}/fixtures/headtohead?h2h=${id1}-${id2}`, h);
 }
-export async function apifCoachs(teamId: string) {
-  const h = apifHeaders();
+export async function apifCoachs(teamId: string, clientKey?: string) {
+  const h = apifHeaders(clientKey);
   if (!h) throw new Error("APIF_KEY not configured");
   return fetchJSON(`${APIF_BASE}/coachs?team=${teamId}`, h);
 }
