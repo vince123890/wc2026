@@ -3,6 +3,14 @@ import { useEffect, useState } from "react";
 import type { MatchLineups, LineupPlayer } from "@/lib/types";
 import { WC2026_TEAMS } from "@/lib/wc2026-data";
 
+// Batas setengah lapangan per tim (viewBox 0 0 340 540) — selaras dengan compressHome/compressAway
+const PITCH_X_MIN = 10;
+const PITCH_X_MAX = 330;
+const HALF_BOUNDS: Record<"home" | "away", { yMin: number; yMax: number }> = {
+  home: { yMin: 270, yMax: 530 },
+  away: { yMin: 10, yMax: 270 },
+};
+
 // Mobile adaptive (UX-R04): < 768px portrait → list per lini; else SVG.
 function useIsMobilePortrait() {
   const [m, setM] = useState(false);
@@ -24,15 +32,67 @@ function lineOf(pos: string): (typeof LINE_ORDER)[number] {
   return "FWD";
 }
 
-function Marker({ p, color }: { p: LineupPlayer; color: string }) {
+function Marker({ p, color, side, editable, onDragEnd }: {
+  p: LineupPlayer; color: string; side: "home" | "away"; editable?: boolean;
+  onDragEnd?: (playerId: string, x: number, y: number) => void;
+}) {
+  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+
   if (p.x === undefined || p.y === undefined) return null;
+  const cx = dragPos?.x ?? p.x;
+  const cy = dragPos?.y ?? p.y;
+
+  function toSvgPoint(e: React.PointerEvent<SVGGElement>): { x: number; y: number } | null {
+    const svg = e.currentTarget.ownerSVGElement;
+    if (!svg) return null;
+    const rect = svg.getBoundingClientRect();
+    const scaleX = 340 / rect.width;
+    const scaleY = 540 / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    const bounds = HALF_BOUNDS[side];
+    return {
+      x: Math.min(PITCH_X_MAX, Math.max(PITCH_X_MIN, x)),
+      y: Math.min(bounds.yMax, Math.max(bounds.yMin, y)),
+    };
+  }
+
+  function handlePointerDown(e: React.PointerEvent<SVGGElement>) {
+    if (!editable) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setDragging(true);
+    const pt = toSvgPoint(e);
+    if (pt) setDragPos(pt);
+  }
+
+  function handlePointerMove(e: React.PointerEvent<SVGGElement>) {
+    if (!editable || !dragging) return;
+    const pt = toSvgPoint(e);
+    if (pt) setDragPos(pt);
+  }
+
+  function handlePointerUp(e: React.PointerEvent<SVGGElement>) {
+    if (!editable || !dragging) return;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+    setDragging(false);
+    const pt = toSvgPoint(e) ?? dragPos;
+    if (pt) onDragEnd?.(p.id, pt.x, pt.y);
+    setDragPos(null);
+  }
+
   return (
-    <g>
-      <circle cx={p.x} cy={p.y} r={17} fill={color} stroke="#07120c" strokeWidth={2} />
-      <text x={p.x} y={p.y + 4} textAnchor="middle" fontSize={12} fontWeight={700} fill="#07120c">
+    <g
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      style={editable ? { cursor: dragging ? "grabbing" : "grab" } : undefined}
+    >
+      <circle cx={cx} cy={cy} r={dragging ? 19 : 17} fill={color} stroke="#07120c" strokeWidth={2} opacity={dragging ? 0.85 : 1} />
+      <text x={cx} y={cy + 4} textAnchor="middle" fontSize={12} fontWeight={700} fill="#07120c">
         {p.jersey}
       </text>
-      <text x={p.x} y={p.y + 30} textAnchor="middle" fontSize={10} fill="#f2efe6">
+      <text x={cx} y={cy + 30} textAnchor="middle" fontSize={10} fill="#f2efe6">
         {p.short ?? p.name}
         {p.captain ? " (C)" : ""}
       </text>
@@ -40,7 +100,11 @@ function Marker({ p, color }: { p: LineupPlayer; color: string }) {
   );
 }
 
-export function FormationPitch({ lineups, homeId, awayId }: { lineups: MatchLineups; homeId: string; awayId: string }) {
+export function FormationPitch({ lineups, homeId, awayId, editable, onPlayerMove }: {
+  lineups: MatchLineups; homeId: string; awayId: string;
+  editable?: boolean;
+  onPlayerMove?: (side: "home" | "away", playerId: string, x: number, y: number) => void;
+}) {
   const mobile = useIsMobilePortrait();
   const homeColor = "#e8b54a"; // gold for home
   const awayColor = "#4ade80"; // green for away
@@ -82,10 +146,12 @@ export function FormationPitch({ lineups, homeId, awayId }: { lineups: MatchLine
           <rect x="90" y="460" width="160" height="70" />
         </g>
         {lineups.home.starters.map((p) => (
-          <Marker key={p.id} p={p} color={homeColor} />
+          <Marker key={p.id} p={p} color={homeColor} side="home" editable={editable}
+            onDragEnd={(playerId, x, y) => onPlayerMove?.("home", playerId, x, y)} />
         ))}
         {lineups.away.starters.map((p) => (
-          <Marker key={p.id} p={p} color={awayColor} />
+          <Marker key={p.id} p={p} color={awayColor} side="away" editable={editable}
+            onDragEnd={(playerId, x, y) => onPlayerMove?.("away", playerId, x, y)} />
         ))}
       </svg>
     </div>

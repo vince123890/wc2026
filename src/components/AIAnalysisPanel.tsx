@@ -3,6 +3,11 @@ import { useState } from "react";
 import type { AIAnalysisResponse, Team, Coach, Prediction } from "@/lib/types";
 import { useStore } from "@/lib/store";
 
+interface LineupSummary {
+  home: { formation: string; starters: string[] };
+  away: { formation: string; starters: string[] };
+}
+
 export function AIAnalysisPanel({
   home,
   away,
@@ -10,6 +15,7 @@ export function AIAnalysisPanel({
   awayCoach,
   tier,
   prediction,
+  lineups,
 }: {
   home: Team;
   away: Team;
@@ -17,6 +23,7 @@ export function AIAnalysisPanel({
   awayCoach?: Coach | null;
   tier: number;
   prediction?: Prediction | null;
+  lineups?: LineupSummary | null;
 }) {
   const { apiKey, apiProvider } = useStore();
   const [result, setResult] = useState<AIAnalysisResponse | null>(null);
@@ -37,6 +44,7 @@ export function AIAnalysisPanel({
           awayCoach,
           tier,
           userPrediction: prediction ? { homeScore: prediction.homeScore, awayScore: prediction.awayScore } : null,
+          lineups,
           apiKey,
           provider: apiProvider,
         }),

@@ -18,7 +18,7 @@ ATURAN KETAT:
 Skema JSON: { "tacticalMatchup": string|null, "coachPhilosophy": string|null, "keyPlayers": [{"team","name","position","reason"}], "prediction": {"homeScore":number,"awayScore":number,"alternativeScenario":string,"reasoning":string}, "userPredictionEval": string|null }`;
 
 function buildUserPrompt(body: AnalyzeBody): string {
-  const { home, away, homeCoach, awayCoach, tier, userPrediction } = body;
+  const { home, away, homeCoach, awayCoach, tier, userPrediction, lineups } = body;
   const lines = [
     `Pertandingan: ${home.name} (HOME) vs ${away.name} (AWAY). Tier analisis: ${tier}.`,
     `Statistik ${home.name}: rating ${home.rating}, attack ${home.attack}, defense ${home.defense}, possession ${home.possession}%, form ${home.form?.join("-")}.`,
@@ -30,6 +30,10 @@ function buildUserPrompt(body: AnalyzeBody): string {
     lines.push("Sertakan analisis tacticalMatchup.");
   }
   if (tier >= 4) lines.push("Sertakan coachPhilosophy.");
+  if (lineups) {
+    lines.push(`Starting XI ${home.name} (${lineups.home.formation}): ${lineups.home.starters.join(", ")}.`);
+    lines.push(`Starting XI ${away.name} (${lineups.away.formation}): ${lineups.away.starters.join(", ")}.`);
+  }
   if (userPrediction) lines.push(`Tebakan user: ${userPrediction.homeScore}-${userPrediction.awayScore}. Evaluasi di userPredictionEval.`);
   return lines.join("\n");
 }
@@ -41,6 +45,7 @@ interface AnalyzeBody {
   awayCoach?: (typeof FALLBACK_COACHES)[string] | null;
   tier: number;
   userPrediction?: { homeScore: number; awayScore: number } | null;
+  lineups?: { home: { formation: string; starters: string[] }; away: { formation: string; starters: string[] } } | null;
   apiKey?: string;
   provider?: "claude" | "gemini";
 }

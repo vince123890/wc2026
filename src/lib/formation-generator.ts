@@ -58,6 +58,9 @@ const FORMATION_SLOTS: Record<string, Slot[]> = {
 
 const DEFAULT_FORMATION = "4-3-3";
 
+// Daftar nama formasi yang tersedia untuk dropdown ganti formasi
+export const FORMATION_NAMES = Object.keys(FORMATION_SLOTS);
+
 // Mapping posisi spesifik (slot) → grup umum (pos di KeyPlayer)
 function slotGroup(slotPos: string): "GK" | "DEF" | "MID" | "FWD" {
   if (slotPos === "GK") return "GK";
@@ -157,4 +160,45 @@ export function generateProjectedLineup(
   });
 
   return { formation, confirmed: false, starters, bench: [] };
+}
+
+/**
+ * Ganti formasi tim sambil mempertahankan identitas pemain (nama, jersey, dll).
+ * Pemain dikelompokkan per slotGroup lalu diisi ulang ke slot formasi baru.
+ * Kelebihan pemain (formasi baru lebih sedikit di grup itu) dipindah ke bench;
+ * kekurangan slot diisi placeholder generik per posisi.
+ */
+export function applyFormation(current: TeamLineup, newFormation: string, side: "home" | "away"): TeamLineup {
+  const template = FORMATION_SLOTS[newFormation] ?? FORMATION_SLOTS[DEFAULT_FORMATION];
+  const slots = side === "home" ? compressHome(template) : compressAway(template);
+
+  const pool: Record<string, LineupPlayer[]> = { GK: [], DEF: [], MID: [], FWD: [] };
+  for (const p of current.starters) {
+    pool[slotGroup(p.pos)]?.push(p);
+  }
+
+  let placeholderId = 0;
+  const starters: LineupPlayer[] = slots.map((slot) => {
+    const group = slotGroup(slot.pos);
+    const player = pool[group]?.shift();
+    if (player) {
+      return { ...player, pos: slot.pos, x: slot.x, y: slot.y };
+    }
+    placeholderId += 1;
+    return {
+      id: `proj-${side}-ph${placeholderId}`,
+      name: slot.pos,
+      short: slot.pos,
+      pos: slot.pos,
+      jersey: 0,
+      x: slot.x,
+      y: slot.y,
+    };
+  });
+
+  // Pemain yang tersisa (kelebihan dari grup posisinya) dipindah ke bench
+  const leftover = Object.values(pool).flat();
+  const bench = [...leftover, ...current.bench];
+
+  return { ...current, formation: newFormation, starters, bench };
 }

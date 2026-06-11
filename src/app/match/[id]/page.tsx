@@ -19,9 +19,9 @@ import { StatRadarChart } from "@/components/StatChart";
 import { StatusBadge, Crest } from "@/components/MatchCard";
 import { useStore } from "@/lib/store";
 import { getKeyPlayers } from "@/lib/key-players";
-import { generateProjectedLineup } from "@/lib/formation-generator";
+import { generateProjectedLineup, applyFormation, FORMATION_NAMES } from "@/lib/formation-generator";
 import { FIFA_RANKING } from "@/lib/fifa-ranking";
-import type { Team } from "@/lib/types";
+import type { Team, MatchLineups, TeamLineup } from "@/lib/types";
 
 const TABS = ["Overview", "Taktis", "Pemain", "Lineup", "AI & Prediksi"] as const;
 type Tab = (typeof TABS)[number];
@@ -50,7 +50,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
   const fixture = fxData?.fixtures.find((f) => f.id === id);
   const matchState = useMatchState(fixture ?? { id:"",status:"SCHEDULED",kickoff:new Date().toISOString(),round:"",homeName:"",awayName:"",homeId:null,awayId:null,group:"",venue:"" });
   const countdown = useCountdown(fixture?.kickoff ?? new Date().toISOString());
-  const { apiKey, apiProvider, predictions } = useStore();
+  const { apiKey, apiProvider, predictions, customLineups, setCustomFormation, setCustomPlayerPos, resetCustomLineup } = useStore();
   const live = isLiveState(matchState);
   const isFinished = ["FINISHED","EVALUATED"].includes(fixture?.status ?? "");
 
@@ -77,9 +77,32 @@ export default function MatchPage({ params }: { params: { id: string } }) {
     };
   }, [lineups, fixture?.homeId, fixture?.awayId, homeCoach?.formation, awayCoach?.formation, homeSquadRes, awaySquadRes]);
 
-  // Compute prediction and tactical matchup from free data sources
   // Pakai lineup resmi jika tersedia, kalau belum pakai lineup perkiraan (formasi pelatih + skuad)
-  const effectiveLineups = lineups ?? projectedLineups;
+  const baseLineups = lineups ?? projectedLineups;
+
+  // Lapisan kustomisasi user — ganti formasi & geser posisi pemain (drag-and-drop)
+  const customLineup = customLineups[id];
+  const effectiveLineups: MatchLineups | null = useMemo(() => {
+    if (!baseLineups) return null;
+    const applySide = (side: "home" | "away", lineup: TeamLineup): TeamLineup => {
+      const custom = customLineup?.[side];
+      let result = lineup;
+      if (custom?.formation && custom.formation !== lineup.formation) {
+        result = applyFormation(lineup, custom.formation, side);
+      }
+      if (custom?.positions) {
+        result = {
+          ...result,
+          starters: result.starters.map((p) =>
+            custom.positions?.[p.id] ? { ...p, x: custom.positions[p.id].x, y: custom.positions[p.id].y } : p
+          ),
+        };
+      }
+      return result;
+    };
+    return { home: applySide("home", baseLineups.home), away: applySide("away", baseLineups.away) };
+  }, [baseLineups, customLineup]);
+
   const prediction = useMemo(() => {
     if (!fixture) return null;
     return calculatePrediction(fixture.homeId ?? "", fixture.awayId ?? "", homeCoach, awayCoach, effectiveLineups);
@@ -88,6 +111,16 @@ export default function MatchPage({ params }: { params: { id: string } }) {
   const tactical = useMemo(() => {
     return calculateTacticalMatchup(homeCoach, awayCoach);
   }, [homeCoach?.name, awayCoach?.name]);
+
+  // Ringkasan starting XI untuk prompt AI — abaikan slot placeholder (jersey 0)
+  const lineupsForAI = useMemo(() => {
+    if (!effectiveLineups) return null;
+    const starters = (lineup: TeamLineup) => lineup.starters.filter((p) => p.jersey > 0).map((p) => p.short ?? p.name);
+    return {
+      home: { formation: effectiveLineups.home.formation, starters: starters(effectiveLineups.home) },
+      away: { formation: effectiveLineups.away.formation, starters: starters(effectiveLineups.away) },
+    };
+  }, [effectiveLineups]);
 
   const confidence = calculateSystemConfidence({
     hasTeamStats: !!(fixture?.homeId && FIFA_RANKING[fixture.homeId]),
@@ -196,19 +229,36 @@ export default function MatchPage({ params }: { params: { id: string } }) {
 
       {/* ── LINEUP ── */}
       {tab === "Lineup" && (
-        lineups
-          ? <FormationPitch lineups={lineups} homeId={fixture.homeId!} awayId={fixture.awayId!} />
-          : projectedLineups
-            ? <div className="space-y-2">
+        effectiveLineups
+          ? <div className="space-y-2">
+              {!lineups && (
                 <div className="rounded-lg border border-dashed border-pitch-700 bg-pitch-900/40 px-3 py-2 text-center text-[11px] text-ink-low">
                   ⚠ Lineup resmi belum dirilis — menampilkan starting XI <span className="text-gold">perkiraan</span> berdasarkan formasi pelatih{(homeSquadRes?.source === "api-football" || awaySquadRes?.source === "api-football") ? " & skuad API-Football" : " & pemain kunci"}.
                 </div>
-                <FormationPitch lineups={projectedLineups} homeId={fixture.homeId!} awayId={fixture.awayId!} />
+              )}
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-pitch-700 bg-pitch-900/40 px-3 py-2 text-[11px]">
+                <span className="text-gold">✏️ Geser pemain atau ganti formasi — perubahan memengaruhi prediksi & analisis AI.</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <FormationSelect label={fixture.homeName} value={effectiveLineups.home.formation}
+                    onChange={(f) => setCustomFormation(id, "home", f)} />
+                  <FormationSelect label={fixture.awayName} value={effectiveLineups.away.formation}
+                    onChange={(f) => setCustomFormation(id, "away", f)} />
+                  {customLineup && (
+                    <button onClick={() => resetCustomLineup(id)}
+                      className="rounded-md border border-pitch-700 px-2 py-1 text-ink-mid hover:text-ink-hi">
+                      Reset ke lineup asli
+                    </button>
+                  )}
+                </div>
               </div>
-            : <EmptyState
-                title="Lineup belum tersedia"
-                detail="Lineup biasanya dirilis ~1 jam sebelum kickoff. Butuh API key API-Football (gratis)."
-                hint="Isi API Key API-Football di Pengaturan untuk mengaktifkan. Free tier: 100 req/hari." />
+              <FormationPitch lineups={effectiveLineups} homeId={fixture.homeId!} awayId={fixture.awayId!}
+                editable
+                onPlayerMove={(side, playerId, x, y) => setCustomPlayerPos(id, side, playerId, x, y)} />
+            </div>
+          : <EmptyState
+              title="Lineup belum tersedia"
+              detail="Lineup biasanya dirilis ~1 jam sebelum kickoff. Butuh API key API-Football (gratis)."
+              hint="Isi API Key API-Football di Pengaturan untuk mengaktifkan. Free tier: 100 req/hari." />
       )}
 
       {/* ── AI & PREDIKSI ── */}
@@ -223,6 +273,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
             homeCoach={homeCoach} awayCoach={awayCoach}
             tier={confidence.tier}
             prediction={predictions[fixture.id] ?? null}
+            lineups={lineupsForAI}
           />
         </div>
       )}
@@ -268,6 +319,18 @@ function TeamHead({ teamId, name }: { teamId: string | null; name: string }) {
       {teamId ? <Crest teamId={teamId} size={48} /> : <span className="text-4xl">🏳️</span>}
       <span className="max-w-[80px] text-center text-sm leading-tight text-ink-hi">{name}</span>
     </div>
+  );
+}
+
+function FormationSelect({ label, value, onChange }: { label: string; value: string; onChange: (formation: string) => void }) {
+  return (
+    <label className="flex items-center gap-1 text-ink-mid">
+      {label}
+      <select value={value} onChange={(e) => onChange(e.target.value)}
+        className="rounded-md border border-pitch-700 bg-pitch-900 px-1.5 py-0.5 text-ink-hi">
+        {FORMATION_NAMES.map((f) => <option key={f} value={f}>{f}</option>)}
+      </select>
+    </label>
   );
 }
 

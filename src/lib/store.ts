@@ -11,12 +11,23 @@ export interface EvaluatedPrediction extends Prediction {
   finalAway: number;
 }
 
+export interface CustomLineupSide {
+  formation?: string;
+  positions?: Record<string, { x: number; y: number }>;
+}
+
+export interface CustomLineup {
+  home?: CustomLineupSide;
+  away?: CustomLineupSide;
+}
+
 interface AppState {
   profile: UserProfile;
   predictions: Record<string, Prediction | EvaluatedPrediction>;
   apiKey: string | null;
   apiProvider: "claude" | "gemini";
   apifKey: string | null;
+  customLineups: Record<string, CustomLineup>;
   hydrated: boolean;
   onboardingDone: boolean;
 
@@ -26,12 +37,15 @@ interface AppState {
   evaluatePrediction: (matchId: string, breakdown: ScoreBreakdown, finalHome: number, finalAway: number) => void;
   setApiKey: (key: string | null, provider: "claude" | "gemini") => void;
   setApifKey: (key: string | null) => void;
+  setCustomFormation: (matchId: string, side: "home" | "away", formation: string) => void;
+  setCustomPlayerPos: (matchId: string, side: "home" | "away", playerId: string, x: number, y: number) => void;
+  resetCustomLineup: (matchId: string, side?: "home" | "away") => void;
   setOnboardingDone: () => void;
 }
 
 const LS_KEY = "wc2026:state:v2";
 
-function persist(state: Pick<AppState, "profile" | "predictions" | "apiKey" | "apiProvider" | "apifKey" | "onboardingDone">) {
+function persist(state: Pick<AppState, "profile" | "predictions" | "apiKey" | "apiProvider" | "apifKey" | "customLineups" | "onboardingDone">) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch { /* incognito */ }
 }
 
@@ -49,6 +63,7 @@ export const useStore = create<AppState>((set, get) => ({
   apiKey: null,
   apiProvider: "claude",
   apifKey: null,
+  customLineups: {},
   hydrated: false,
   onboardingDone: false,
 
@@ -56,7 +71,7 @@ export const useStore = create<AppState>((set, get) => ({
     if (get().hydrated) return;
     try {
       const raw = localStorage.getItem(LS_KEY);
-      if (raw) { set({ ...JSON.parse(raw), hydrated: true }); return; }
+      if (raw) { set({ customLineups: {}, ...JSON.parse(raw), hydrated: true }); return; }
     } catch { /* ignore */ }
     set({ hydrated: true });
   },
@@ -102,6 +117,42 @@ export const useStore = create<AppState>((set, get) => ({
   setApifKey: (apifKey) => {
     set({ apifKey });
     persist({ ...get(), apifKey });
+  },
+
+  setCustomFormation: (matchId, side, formation) => {
+    const existing = get().customLineups[matchId] ?? {};
+    const customLineups = {
+      ...get().customLineups,
+      [matchId]: { ...existing, [side]: { ...existing[side], formation } },
+    };
+    set({ customLineups });
+    persist({ ...get(), customLineups });
+  },
+
+  setCustomPlayerPos: (matchId, side, playerId, x, y) => {
+    const existing = get().customLineups[matchId] ?? {};
+    const sideState = existing[side] ?? {};
+    const positions = { ...sideState.positions, [playerId]: { x, y } };
+    const customLineups = {
+      ...get().customLineups,
+      [matchId]: { ...existing, [side]: { ...sideState, positions } },
+    };
+    set({ customLineups });
+    persist({ ...get(), customLineups });
+  },
+
+  resetCustomLineup: (matchId, side) => {
+    const customLineups = { ...get().customLineups };
+    if (!side) {
+      delete customLineups[matchId];
+    } else if (customLineups[matchId]) {
+      const updated = { ...customLineups[matchId] };
+      delete updated[side];
+      if (updated.home || updated.away) customLineups[matchId] = updated;
+      else delete customLineups[matchId];
+    }
+    set({ customLineups });
+    persist({ ...get(), customLineups });
   },
 
   setOnboardingDone: () => {
