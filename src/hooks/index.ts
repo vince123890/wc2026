@@ -51,6 +51,19 @@ export function useCoach(teamId: string | undefined) {
   });
 }
 
+// Skuad lengkap (26 pemain) — enrichment dari API-Football, opsional (Tier 2 addendum)
+export function useSquad(teamId: string | undefined) {
+  return useQuery({
+    queryKey: ["squad", teamId],
+    queryFn: () => fetchProxy<import("@/app/api/proxy/squads/route").SquadPlayer[] | null>(
+      `/api/proxy/squads?teamId=${teamId}`
+    ),
+    enabled: !!teamId,
+    staleTime: 24 * 60 * 60_000, // 24 jam — skuad jarang berubah
+    retry: 0,
+  });
+}
+
 export function useTeams() {
   return useQuery({
     queryKey: ["teams"],

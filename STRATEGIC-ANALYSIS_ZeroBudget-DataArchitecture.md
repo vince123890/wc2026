@@ -470,7 +470,7 @@ Sudah dipakai di implementasi saat ini:
 
 | Endpoint | Data yang Diberikan | Nilai untuk App | Status |
 |----------|--------------------|--------------------|:------:|
-| `/players/squads?team={id}` | Squad resmi 23-26 pemain per tim, posisi, nama | **Full roster** pengganti key-players.ts manual | 🟡 Belum dipakai |
+| `/players/squads?team={id}` | Squad resmi 23-26 pemain per tim, posisi, nama | **Full roster** pengganti key-players.ts manual | ✅ Implemented |
 | `/players?league=1&season=2026&page=1` | Daftar seluruh pemain WC 2026 dengan foto, usia, nasionalitas | Profil pemain lengkap | 🟡 Belum dipakai |
 | `/fixtures/headtohead?h2h=ID1-ID2` | H2H via API langsung (bukan dataset historis) | Alternatif h2h-data.ts | 🟡 Belum dipakai |
 | `/teams/statistics?league=1&season=2026&team={id}` | Stats tim: rata-rata gol, clean sheet, formasi yang sering dipakai | Menggantikan data manual | 🟡 Belum dipakai |
@@ -532,7 +532,7 @@ Ini adalah **sumber baru yang tidak ada di analisis sebelumnya** dan secara spes
 
 | Fitur | Sebelum Addendum | Setelah Addendum |
 |-------|-----------------|-----------------|
-| **Full squad 26 pemain/tim** | Manual 5-8 pemain (key-players.ts) | API-Football `/players/squads` (gratis) ATAU Zafronix (gratis) |
+| **Full squad 26 pemain/tim** | Manual 5-8 pemain (key-players.ts) | + API-Football `/players/squads` sebagai enrichment opsional di PlayersPanel — ✅ **Implemented** (45/48 tim termapping; `bih`, `cpv`, `cod` tidak ada di database API-Football free tier, fallback ke key-players.ts) |
 | **Stats tim historis** | Dataset Mart Jürisoo (H2H saja) | + API-Football `/teams/statistics` (gratis) |
 | **Prediksi probability** | Internal Poisson model | + API-Football `/predictions` sebagai second opinion (gratis) — ✅ **Implemented** |
 | **Profil coach verifikasi** | coaches-manual.ts (manual) | + API-Football `/coachs?team={id}` (gratis, verifikasi data) |

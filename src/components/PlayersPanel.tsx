@@ -1,7 +1,10 @@
 "use client";
+import { useState } from "react";
 import { getKeyPlayers, type KeyPlayer } from "@/lib/key-players";
 import { WC2026_TEAMS } from "@/lib/wc2026-data";
 import { FIFA_RANKING } from "@/lib/fifa-ranking";
+import { useSquad } from "@/hooks";
+import type { SquadPlayer } from "@/app/api/proxy/squads/route";
 
 interface Props {
   homeId: string;
@@ -24,6 +27,9 @@ export function PlayersPanel({ homeId, awayId, homeName, awayName }: Props) {
   const awayTeam = WC2026_TEAMS[awayId];
   const homeRank = FIFA_RANKING[homeId];
   const awayRank = FIFA_RANKING[awayId];
+
+  const homeSquad = useSquad(homeId);
+  const awaySquad = useSquad(awayId);
 
   const avgFormHome = homePlayers.length ? Math.round(homePlayers.reduce((s,p)=>s+p.form,0)/homePlayers.length*10)/10 : 0;
   const avgFormAway = awayPlayers.length ? Math.round(awayPlayers.reduce((s,p)=>s+p.form,0)/awayPlayers.length*10)/10 : 0;
@@ -60,9 +66,56 @@ export function PlayersPanel({ homeId, awayId, homeName, awayName }: Props) {
         );
       })}
 
+      {/* Skuad lengkap (enrichment, opsional) */}
+      {(homeSquad.data?.source === "api-football" || awaySquad.data?.source === "api-football") && (
+        <div className="grid grid-cols-2 gap-3">
+          <FullSquad name={homeName} squad={homeSquad.data?.data ?? null} />
+          <FullSquad name={awayName} squad={awaySquad.data?.data ?? null} />
+        </div>
+      )}
+
       <p className="text-[11px] text-ink-low">
         Data pemain: Wikipedia + Transfermarkt (publik) · Diperbarui Juni 2026
       </p>
+    </div>
+  );
+}
+
+const SQUAD_POS_ORDER = ["Goalkeeper", "Defender", "Midfielder", "Attacker"];
+const SQUAD_POS_LABEL: Record<string, string> = {
+  Goalkeeper: "Penjaga Gawang", Defender: "Bertahan", Midfielder: "Tengah", Attacker: "Serang",
+};
+
+function FullSquad({ name, squad }: { name: string; squad: SquadPlayer[] | null }) {
+  const [open, setOpen] = useState(false);
+  if (!squad || squad.length === 0) return <div />;
+
+  return (
+    <div className="rounded-xl border border-pitch-700 bg-pitch-900/60 p-3">
+      <button onClick={() => setOpen(v => !v)} className="w-full text-left text-[11px] text-gold underline decoration-dotted">
+        {open ? "Sembunyikan" : "Lihat"} skuad lengkap {name} ({squad.length} pemain)
+      </button>
+      {open && (
+        <div className="mt-2 space-y-2">
+          {SQUAD_POS_ORDER.map(pos => {
+            const players = squad.filter(p => p.position === pos);
+            if (!players.length) return null;
+            return (
+              <div key={pos}>
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-ink-low">{SQUAD_POS_LABEL[pos] ?? pos}</div>
+                <ul className="mt-1 space-y-0.5">
+                  {players.map(p => (
+                    <li key={p.id} className="flex items-center justify-between text-[11px] text-ink-mid">
+                      <span>{p.name}</span>
+                      <span className="tabular text-ink-low">{p.number != null ? `#${p.number}` : ""} · {p.age}th</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
