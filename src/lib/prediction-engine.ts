@@ -3,7 +3,7 @@
 // Semua data dari sumber gratis: FIFA Ranking, H2H, Coach, Key Players
 import { rankingFactor, getStrength, FIFA_RANKING } from "./fifa-ranking";
 import { h2hFactor } from "./h2h-data";
-import type { Coach } from "./types";
+import type { Coach, MatchLineups } from "./types";
 import { getLineupStrength } from "./key-players";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -147,7 +147,8 @@ export function calculatePrediction(
   homeId: string,
   awayId: string,
   homeCoach: Coach | null,
-  awayCoach: Coach | null
+  awayCoach: Coach | null,
+  lineups?: MatchLineups | null
 ): PredictionResult {
   const BASE_LAMBDA = 1.25; // rata-rata gol per tim di WC
 
@@ -162,8 +163,12 @@ export function calculatePrediction(
   const h2h = h2hFactor(homeId, awayId); // -1 to +1
 
   // Faktor 4: Lineup strength dari key players (bobot 20%)
-  const homeStr = getLineupStrength(homeId) / 100; // 0-1
-  const awayStr = getLineupStrength(awayId) / 100;
+  // Jika lineup (resmi/perkiraan) tersedia, pemain kunci yang absen dari starting XI
+  // mengurangi lineup strength tim tersebut.
+  const homeStarters = lineups?.home.starters.map((p) => p.short ?? p.name);
+  const awayStarters = lineups?.away.starters.map((p) => p.short ?? p.name);
+  const homeStr = getLineupStrength(homeId, homeStarters) / 100; // 0-1
+  const awayStr = getLineupStrength(awayId, awayStarters) / 100;
   const lineupAdv = (homeStr - awayStr) * 0.8; // -0.8 to +0.8
 
   // Faktor 5: Coach quality — win rate (bobot 10%)
@@ -189,7 +194,7 @@ export function calculatePrediction(
   if (FIFA_RANKING_AVAILABLE(homeId, awayId)) confidence += 20;
   if (homeCoach?.winRate && awayCoach?.winRate) confidence += 15;
   if (h2hFactor(homeId, awayId) !== 0) confidence += 10;
-  if (getLineupStrength(homeId) !== 50) confidence += 15;
+  if (getLineupStrength(homeId, homeStarters) !== 50) confidence += 15;
 
   const winner = probs.homeWin > probs.awayWin ? homeId : probs.awayWin > probs.homeWin ? awayId : null;
   const explanation = [

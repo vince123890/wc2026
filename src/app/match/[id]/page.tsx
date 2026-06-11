@@ -1,7 +1,7 @@
 "use client";
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { useFixtures, useLineups, useCoach, useMatchEvents } from "@/hooks";
+import { useFixtures, useLineups, useCoach, useMatchEvents, useSquad } from "@/hooks";
 import { useMatchState, useCountdown, canPredict, isLiveState } from "@/hooks/match-state";
 import { WC2026_TEAMS } from "@/lib/wc2026-data";
 import { calculateSystemConfidence } from "@/lib/confidence";
@@ -19,6 +19,7 @@ import { StatRadarChart } from "@/components/StatChart";
 import { StatusBadge, Crest } from "@/components/MatchCard";
 import { useStore } from "@/lib/store";
 import { getKeyPlayers } from "@/lib/key-players";
+import { generateProjectedLineup } from "@/lib/formation-generator";
 import { FIFA_RANKING } from "@/lib/fifa-ranking";
 import type { Team } from "@/lib/types";
 
@@ -57,17 +58,32 @@ export default function MatchPage({ params }: { params: { id: string } }) {
   const { data: homeCoachRes } = useCoach(fixture?.homeId ?? undefined);
   const { data: awayCoachRes } = useCoach(fixture?.awayId ?? undefined);
   const { data: eventsRes } = useMatchEvents(id, live);
+  const { data: homeSquadRes } = useSquad(fixture?.homeId ?? undefined);
+  const { data: awaySquadRes } = useSquad(fixture?.awayId ?? undefined);
 
   const lineups = lineupRes?.data ?? null;
   const homeCoach = homeCoachRes?.data ?? null;
   const awayCoach = awayCoachRes?.data ?? null;
   const events = eventsRes?.data ?? [];
 
+  // Lineup perkiraan — fallback saat lineup resmi belum dirilis (~1 jam sebelum kickoff)
+  const projectedLineups = useMemo(() => {
+    if (lineups || !fixture?.homeId || !fixture?.awayId) return null;
+    const homeSquad = homeSquadRes?.source === "api-football" ? homeSquadRes.data : null;
+    const awaySquad = awaySquadRes?.source === "api-football" ? awaySquadRes.data : null;
+    return {
+      home: generateProjectedLineup(homeCoach?.formation ?? "4-3-3", getKeyPlayers(fixture.homeId), "home", homeSquad),
+      away: generateProjectedLineup(awayCoach?.formation ?? "4-3-3", getKeyPlayers(fixture.awayId), "away", awaySquad),
+    };
+  }, [lineups, fixture?.homeId, fixture?.awayId, homeCoach?.formation, awayCoach?.formation, homeSquadRes, awaySquadRes]);
+
   // Compute prediction and tactical matchup from free data sources
+  // Pakai lineup resmi jika tersedia, kalau belum pakai lineup perkiraan (formasi pelatih + skuad)
+  const effectiveLineups = lineups ?? projectedLineups;
   const prediction = useMemo(() => {
     if (!fixture) return null;
-    return calculatePrediction(fixture.homeId ?? "", fixture.awayId ?? "", homeCoach, awayCoach);
-  }, [fixture?.homeId, fixture?.awayId, homeCoach?.name, awayCoach?.name]);
+    return calculatePrediction(fixture.homeId ?? "", fixture.awayId ?? "", homeCoach, awayCoach, effectiveLineups);
+  }, [fixture?.homeId, fixture?.awayId, homeCoach?.name, awayCoach?.name, effectiveLineups]);
 
   const tactical = useMemo(() => {
     return calculateTacticalMatchup(homeCoach, awayCoach);
@@ -182,10 +198,17 @@ export default function MatchPage({ params }: { params: { id: string } }) {
       {tab === "Lineup" && (
         lineups
           ? <FormationPitch lineups={lineups} homeId={fixture.homeId!} awayId={fixture.awayId!} />
-          : <EmptyState
-              title="Lineup belum tersedia"
-              detail="Lineup biasanya dirilis ~1 jam sebelum kickoff. Butuh API key API-Football (gratis)."
-              hint="Isi API Key API-Football di Pengaturan untuk mengaktifkan. Free tier: 100 req/hari." />
+          : projectedLineups
+            ? <div className="space-y-2">
+                <div className="rounded-lg border border-dashed border-pitch-700 bg-pitch-900/40 px-3 py-2 text-center text-[11px] text-ink-low">
+                  ⚠ Lineup resmi belum dirilis — menampilkan starting XI <span className="text-gold">perkiraan</span> berdasarkan formasi pelatih{(homeSquadRes?.source === "api-football" || awaySquadRes?.source === "api-football") ? " & skuad API-Football" : " & pemain kunci"}.
+                </div>
+                <FormationPitch lineups={projectedLineups} homeId={fixture.homeId!} awayId={fixture.awayId!} />
+              </div>
+            : <EmptyState
+                title="Lineup belum tersedia"
+                detail="Lineup biasanya dirilis ~1 jam sebelum kickoff. Butuh API key API-Football (gratis)."
+                hint="Isi API Key API-Football di Pengaturan untuk mengaktifkan. Free tier: 100 req/hari." />
       )}
 
       {/* ── AI & PREDIKSI ── */}

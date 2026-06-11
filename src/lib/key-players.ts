@@ -347,9 +347,17 @@ export function getStarPlayer(teamId: string): KeyPlayer | null {
 }
 
 /** Get overall team strength from players: average form of starters */
-export function getLineupStrength(teamId: string): number {
+// startersShort: nama pendek pemain di starting XI (lineup resmi/perkiraan).
+// Pemain kunci yang TIDAK ada di starters dianggap tidak main (form dianggap 0)
+// — sehingga absennya pemain bintang menurunkan lineup strength.
+export function getLineupStrength(teamId: string, startersShort?: string[]): number {
   const players = KEY_PLAYERS[teamId] ?? [];
   if (!players.length) return 50;
-  const avg = players.reduce((s, p) => s + p.form, 0) / players.length;
+  if (!startersShort) {
+    const avg = players.reduce((s, p) => s + p.form, 0) / players.length;
+    return Math.round(avg * 10); // 0-100
+  }
+  const startersSet = new Set(startersShort);
+  const avg = players.reduce((s, p) => s + (startersSet.has(p.short) ? p.form : 0), 0) / players.length;
   return Math.round(avg * 10); // 0-100
 }
