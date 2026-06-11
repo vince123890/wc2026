@@ -23,14 +23,21 @@ export const KEY_PLAYERS: Record<string, KeyPlayer[]> = {
     { name:"Guillermo Ochoa",short:"Ochoa",pos:"GK",jersey:1,club:"América",age:39,caps:140,goals:0,isStar:true,form:7,injuryRisk:"LOW",traits:["Reflex luar biasa","Penyelamat WC","Berpengalaman"] },
     { name:"Hirving Lozano",short:"Lozano",pos:"FWD",jersey:22,club:"PSV",age:28,caps:85,goals:17,isStar:true,form:8,injuryRisk:"LOW",traits:["Kecepatan","Dribbling","Sayap berbahaya"] },
     { name:"Edson Álvarez",short:"Álvarez",pos:"MID",jersey:4,club:"West Ham",age:27,caps:72,goals:7,isStar:false,form:8,injuryRisk:"LOW",traits:["Defensive mid","Intersep","Tenaga"] },
-    { name:"Henry Martín",short:"Martín",pos:"FWD",jersey:9,club:"América",age:32,caps:40,goals:16,isStar:false,form:7,injuryRisk:"LOW",traits:["Target man","Heading","Set piece"] },
+    { name:"Henry Martín",short:"Martín",pos:"FWD",jersey:19,club:"América",age:32,caps:40,goals:16,isStar:false,form:7,injuryRisk:"LOW",traits:["Target man","Heading","Set piece"] },
     { name:"César Montes",short:"Montes",pos:"DEF",jersey:3,club:"Monterrey",age:28,caps:45,goals:4,isStar:false,form:7,injuryRisk:"LOW",traits:["CB solid","Udara","Kepemimpinan"] },
+    // Starter terkonfirmasi laga pembuka vs South Africa (11 Jun 2026)
+    { name:"Raúl Jiménez",short:"Jiménez",pos:"FWD",jersey:9,club:"Fulham",age:35,caps:90,goals:35,isStar:true,form:8,injuryRisk:"LOW",traits:["Target man","Finishing","Kapten"] },
+    { name:"Julián Quiñones",short:"Quiñones",pos:"FWD",jersey:16,club:"Al-Qadsiah",age:30,caps:15,goals:5,isStar:true,form:8,injuryRisk:"LOW",traits:["Winger","Finishing","Kecepatan"] },
+    { name:"Álvaro Fidalgo",short:"Fidalgo",pos:"MID",jersey:8,club:"Real Betis",age:27,caps:25,goals:2,isStar:true,form:7,injuryRisk:"LOW",traits:["Playmaker","Visi bermain","Set piece"] },
+    { name:"Brian Gutiérrez",short:"Gutiérrez",pos:"MID",jersey:26,club:"CD Guadalajara",age:22,caps:8,goals:1,isStar:false,form:7,injuryRisk:"LOW",traits:["Attacking mid","Teknik","Muda"] },
   ],
   rsa: [
     { name:"Ronwen Williams",short:"Williams",pos:"GK",jersey:1,club:"Mamelodi Sundowns",age:32,caps:40,goals:0,isStar:true,form:8,injuryRisk:"LOW",traits:["Penyelamat kelas Afrika","Konsisten"] },
     { name:"Percy Tau",short:"Tau",pos:"FWD",jersey:10,club:"Al Ahly",age:30,caps:50,goals:9,isStar:true,form:7,injuryRisk:"LOW",traits:["Teknik","Kreativitas","Pengalaman Eropa"] },
     { name:"Bongani Zungu",short:"Zungu",pos:"MID",jersey:8,club:"Mamelodi Sundowns",age:31,caps:38,goals:3,isStar:false,form:7,injuryRisk:"LOW",traits:["Box-to-box","Fisik","Tekel"] },
     { name:"Siyanda Xulu",short:"Xulu",pos:"DEF",jersey:5,club:"Al Wehda",age:32,caps:30,goals:0,isStar:false,form:6,injuryRisk:"MED",traits:["CB berpengalaman","Udara"] },
+    // Starter terkonfirmasi laga pembuka vs Mexico (11 Jun 2026)
+    { name:"Aubrey Modiba",short:"Modiba",pos:"DEF",jersey:6,club:"Mamelodi Sundowns",age:28,caps:35,goals:1,isStar:false,form:7,injuryRisk:"LOW",traits:["Left-back","Overlapping","Bertahan"] },
   ],
   kor: [
     { name:"Kim Seung-gyu",short:"Seung-gyu",pos:"GK",jersey:1,club:"Vissel Kobe",age:36,caps:70,goals:0,isStar:false,form:7,injuryRisk:"LOW",traits:["Berpengalaman","Konsisten"] },
