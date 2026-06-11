@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { AIAnalysisResponse, Team, Coach, Prediction } from "@/lib/types";
+import type { PredictionResult } from "@/lib/prediction-engine";
 import { useStore } from "@/lib/store";
 
 interface LineupSummary {
@@ -16,6 +17,7 @@ export function AIAnalysisPanel({
   tier,
   prediction,
   lineups,
+  systemPrediction,
 }: {
   home: Team;
   away: Team;
@@ -24,6 +26,7 @@ export function AIAnalysisPanel({
   tier: number;
   prediction?: Prediction | null;
   lineups?: LineupSummary | null;
+  systemPrediction?: PredictionResult | null;
 }) {
   const { apiKey, apiProvider } = useStore();
   const [result, setResult] = useState<AIAnalysisResponse | null>(null);
@@ -45,6 +48,18 @@ export function AIAnalysisPanel({
           tier,
           userPrediction: prediction ? { homeScore: prediction.homeScore, awayScore: prediction.awayScore } : null,
           lineups,
+          systemPrediction: systemPrediction
+            ? {
+                homeScore: systemPrediction.homeScore,
+                awayScore: systemPrediction.awayScore,
+                expectedGoalsHome: systemPrediction.expectedGoalsHome,
+                expectedGoalsAway: systemPrediction.expectedGoalsAway,
+                probHomeWin: systemPrediction.probHomeWin,
+                probDraw: systemPrediction.probDraw,
+                probAwayWin: systemPrediction.probAwayWin,
+                factors: systemPrediction.factors,
+              }
+            : null,
           apiKey,
           provider: apiProvider,
         }),

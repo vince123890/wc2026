@@ -299,6 +299,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
             tier={confidence.tier}
             prediction={predictions[fixture.id] ?? null}
             lineups={lineupsForAI}
+            systemPrediction={prediction}
           />
         </div>
       )}

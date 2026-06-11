@@ -8,17 +8,18 @@ import type { AIAnalysisResponse } from "@/lib/types";
 export const maxDuration = 30; // R-06
 
 const SYSTEM_PROMPT = `Kamu adalah Analis Taktis AI untuk FIFA World Cup 2026.
-Tugasmu menganalisis pertandingan berdasarkan data statistik, lineup, formasi, dan profil pelatih.
+Tugasmu menganalisis pertandingan berdasarkan data statistik, lineup, formasi, profil pelatih, DAN prediksi sistem (model statistik Poisson berbasis ranking FIFA, H2H, lineup, form turnamen, dan taktis).
 ATURAN KETAT:
 1. SELALU kembalikan respons dalam format JSON valid. Tidak ada teks di luar JSON.
 2. Jangan mengarang data. Jika data tidak tersedia, isi field dengan null.
 3. Gunakan bahasa Indonesia yang informatif dan engaging.
 4. Analisis berbasis data yang diberikan, bukan asumsi.
 5. JANGAN cantumkan confidence level — itu dikalkulasi sistem.
+6. PENTING: Jika data "Prediksi sistem" diberikan, jadikan itu ANCHOR utama untuk field prediction.homeScore/awayScore — skor prediksimu harus konsisten dengan expected goals & probabilitas sistem (boleh sama, atau beda maksimal ±1 gol per tim jika ada alasan taktis kuat). Jangan membuat prediksi yang jauh lebih ekstrem daripada sistem tanpa menjelaskan alasannya secara eksplisit di reasoning. Jika prediksimu berbeda dari sistem, sebutkan alasannya di reasoning.
 Skema JSON: { "tacticalMatchup": string|null, "coachPhilosophy": string|null, "keyPlayers": [{"team","name","position","reason"}], "prediction": {"homeScore":number,"awayScore":number,"alternativeScenario":string,"reasoning":string}, "userPredictionEval": string|null }`;
 
 function buildUserPrompt(body: AnalyzeBody): string {
-  const { home, away, homeCoach, awayCoach, tier, userPrediction, lineups } = body;
+  const { home, away, homeCoach, awayCoach, tier, userPrediction, lineups, systemPrediction } = body;
   const lines = [
     `Pertandingan: ${home.name} (HOME) vs ${away.name} (AWAY). Tier analisis: ${tier}.`,
     `Statistik ${home.name}: rating ${home.rating}, attack ${home.attack}, defense ${home.defense}, possession ${home.possession}%, form ${home.form?.join("-")}.`,
@@ -34,6 +35,19 @@ function buildUserPrompt(body: AnalyzeBody): string {
     lines.push(`Starting XI ${home.name} (${lineups.home.formation}): ${lineups.home.starters.join(", ")}.`);
     lines.push(`Starting XI ${away.name} (${lineups.away.formation}): ${lineups.away.starters.join(", ")}.`);
   }
+  if (systemPrediction) {
+    lines.push(
+      `Prediksi sistem (model statistik): skor ${systemPrediction.homeScore}-${systemPrediction.awayScore}, ` +
+      `expected goals ${systemPrediction.expectedGoalsHome.toFixed(2)}-${systemPrediction.expectedGoalsAway.toFixed(2)}, ` +
+      `probabilitas menang ${home.name} ${systemPrediction.probHomeWin}% / seri ${systemPrediction.probDraw}% / menang ${away.name} ${systemPrediction.probAwayWin}%.`
+    );
+    const f = systemPrediction.factors;
+    lines.push(
+      `Breakdown faktor sistem (positif = menguntungkan ${home.name}, range -1..1): ` +
+      `ranking ${f.ranking}, form turnamen ${f.form}, taktis ${f.tactical}, lineup ${f.lineup}, h2h ${f.h2h}, pelatih ${f.coach}.`
+    );
+    lines.push("Gunakan prediksi sistem di atas sebagai acuan utama untuk field prediction (lihat aturan #6 di system prompt).");
+  }
   if (userPrediction) lines.push(`Tebakan user: ${userPrediction.homeScore}-${userPrediction.awayScore}. Evaluasi di userPredictionEval.`);
   return lines.join("\n");
 }
@@ -46,6 +60,16 @@ interface AnalyzeBody {
   tier: number;
   userPrediction?: { homeScore: number; awayScore: number } | null;
   lineups?: { home: { formation: string; starters: string[] }; away: { formation: string; starters: string[] } } | null;
+  systemPrediction?: {
+    homeScore: number;
+    awayScore: number;
+    expectedGoalsHome: number;
+    expectedGoalsAway: number;
+    probHomeWin: number;
+    probDraw: number;
+    probAwayWin: number;
+    factors: { ranking: number; tactical: number; h2h: number; lineup: number; coach: number; form: number };
+  } | null;
   apiKey?: string;
   provider?: "claude" | "gemini";
 }
