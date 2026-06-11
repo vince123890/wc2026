@@ -42,12 +42,21 @@ export function useFixtures() {
   });
 }
 
+// Polling: lineup resmi biasanya rilis ~1 jam sebelum kickoff. Selama belum ada
+// data resmi (source !== "api-football"/"balldontlie"), cek ulang tiap 60 detik
+// supaya panel otomatis berganti dari "perkiraan" ke lineup resmi begitu dirilis.
 export function useLineups(matchId: string, enabled = true) {
   const apifKey = useStore((s) => s.apifKey);
   return useQuery({
     queryKey: ["lineups", matchId, apifKey],
     queryFn: () => fetchProxy<MatchLineups | null>(withApifKey(`/api/proxy/lineups?matchId=${matchId}`, apifKey)),
     enabled: enabled && !!matchId,
+    refetchInterval: (query) => {
+      const source = query.state.data?.source;
+      const isOfficial = source === "api-football" || source === "balldontlie" || source === "static-embed";
+      return isOfficial ? false : 60_000;
+    },
+    refetchIntervalInBackground: false,
   });
 }
 

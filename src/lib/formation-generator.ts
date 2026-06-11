@@ -66,9 +66,23 @@ function slotGroup(slotPos: string): "GK" | "DEF" | "MID" | "FWD" {
   return "FWD";
 }
 
-// Untuk tim away, mirror koordinat secara vertikal (away menyerang ke bawah)
-function mirrorY(slots: Slot[]): Slot[] {
-  return slots.map((s) => ({ ...s, y: 540 - s.y }));
+// FORMATION_SLOTS didefinisikan untuk seluruh pitch (y: 100-470). Agar kedua tim
+// tidak saling tumpuk di tengah lapangan, tiap tim dikompres ke setengah lapangan
+// miliknya sendiri: home di y 280-520 (GK di bawah), away di y 20-260 (GK di atas, mirror).
+const SRC_Y_MIN = 100; // FWD paling depan
+const SRC_Y_MAX = 470; // GK
+const HOME_Y_MIN = 280; // dekat garis tengah
+const HOME_Y_MAX = 520; // dekat gawang sendiri
+
+function compressHome(slots: Slot[]): Slot[] {
+  return slots.map((s) => ({
+    ...s,
+    y: HOME_Y_MIN + ((s.y - SRC_Y_MIN) / (SRC_Y_MAX - SRC_Y_MIN)) * (HOME_Y_MAX - HOME_Y_MIN),
+  }));
+}
+
+function compressAway(slots: Slot[]): Slot[] {
+  return compressHome(slots).map((s) => ({ ...s, y: 540 - s.y }));
 }
 
 interface PoolPlayer { name: string; short: string; jersey: number; isStar: boolean; form: number }
@@ -109,7 +123,7 @@ export function generateProjectedLineup(
   squad?: SquadPlayer[] | null
 ): TeamLineup {
   const template = FORMATION_SLOTS[formation] ?? FORMATION_SLOTS[DEFAULT_FORMATION];
-  const slots = side === "home" ? template : mirrorY(template);
+  const slots = side === "home" ? compressHome(template) : compressAway(template);
 
   const pool = squad && squad.length > 0 ? poolFromSquad(squad) : poolFromKeyPlayers(keyPlayers);
   for (const g of Object.values(pool)) g.sort((a, b) => Number(b.isStar) - Number(a.isStar) || b.form - a.form || a.jersey - b.jersey);

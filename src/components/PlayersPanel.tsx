@@ -5,12 +5,14 @@ import { WC2026_TEAMS } from "@/lib/wc2026-data";
 import { FIFA_RANKING } from "@/lib/fifa-ranking";
 import { useSquad } from "@/hooks";
 import type { SquadPlayer } from "@/app/api/proxy/squads/route";
+import type { MatchLineups, LineupPlayer } from "@/lib/types";
 
 interface Props {
   homeId: string;
   awayId: string;
   homeName: string;
   awayName: string;
+  lineups?: MatchLineups | null;
 }
 
 const POS_ORDER = ["GK", "DEF", "MID", "FWD"] as const;
@@ -20,7 +22,7 @@ const RISK_STYLE: Record<string, string> = {
 };
 const RISK_LABEL: Record<string, string> = { LOW: "Fit", MED: "Perlu dipantau", HIGH: "⚠️ Cedera risiko" };
 
-export function PlayersPanel({ homeId, awayId, homeName, awayName }: Props) {
+export function PlayersPanel({ homeId, awayId, homeName, awayName, lineups }: Props) {
   const homePlayers = getKeyPlayers(homeId);
   const awayPlayers = getKeyPlayers(awayId);
   const homeTeam = WC2026_TEAMS[homeId];
@@ -66,6 +68,14 @@ export function PlayersPanel({ homeId, awayId, homeName, awayName }: Props) {
         );
       })}
 
+      {/* Pemain cadangan — hanya tampil jika lineup resmi sudah dirilis */}
+      {lineups?.home.confirmed && (
+        <div className="grid grid-cols-2 gap-3">
+          <BenchList name={homeName} bench={lineups.home.bench} />
+          <BenchList name={awayName} bench={lineups.away.bench} />
+        </div>
+      )}
+
       {/* Skuad lengkap (enrichment, opsional) */}
       {(homeSquad.data?.source === "api-football" || awaySquad.data?.source === "api-football") && (
         <div className="grid grid-cols-2 gap-3">
@@ -77,6 +87,29 @@ export function PlayersPanel({ homeId, awayId, homeName, awayName }: Props) {
       <p className="text-[11px] text-ink-low">
         Data pemain: Wikipedia + Transfermarkt (publik) · Diperbarui Juni 2026
       </p>
+    </div>
+  );
+}
+
+function BenchList({ name, bench }: { name: string; bench: LineupPlayer[] }) {
+  const [open, setOpen] = useState(false);
+  if (!bench || bench.length === 0) return <div />;
+
+  return (
+    <div className="rounded-xl border border-pitch-700 bg-pitch-900/60 p-3">
+      <button onClick={() => setOpen(v => !v)} className="w-full text-left text-[11px] text-gold underline decoration-dotted">
+        {open ? "Sembunyikan" : "Lihat"} cadangan {name} ({bench.length} pemain)
+      </button>
+      {open && (
+        <ul className="mt-2 space-y-0.5">
+          {bench.map(p => (
+            <li key={p.id} className="flex items-center justify-between text-[11px] text-ink-mid">
+              <span>{p.name}</span>
+              <span className="tabular text-ink-low">#{p.jersey} · {p.pos}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

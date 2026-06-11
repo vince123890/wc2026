@@ -191,7 +191,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
       {/* ── PEMAIN ── */}
       {tab === "Pemain" && (
         <PlayersPanel homeId={fixture.homeId ?? ""} awayId={fixture.awayId ?? ""}
-          homeName={fixture.homeName} awayName={fixture.awayName} />
+          homeName={fixture.homeName} awayName={fixture.awayName} lineups={lineups} />
       )}
 
       {/* ── LINEUP ── */}
