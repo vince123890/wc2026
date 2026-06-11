@@ -76,8 +76,9 @@ export function PlayersPanel({ homeId, awayId, homeName, awayName, lineups }: Pr
         </div>
       )}
 
-      {/* Skuad lengkap (enrichment, opsional) */}
-      {(homeSquad.data?.source === "api-football" || awaySquad.data?.source === "api-football") && (
+      {/* Skuad lengkap 26 pemain (API-Football atau openfootball) */}
+      {(["api-football", "openfootball"].includes(homeSquad.data?.source ?? "") ||
+        ["api-football", "openfootball"].includes(awaySquad.data?.source ?? "")) && (
         <div className="grid grid-cols-2 gap-3">
           <FullSquad name={homeName} squad={homeSquad.data?.data ?? null} />
           <FullSquad name={awayName} squad={awaySquad.data?.data ?? null} />
