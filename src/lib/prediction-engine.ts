@@ -224,5 +224,4 @@ export function calculatePrediction(
 
 function FIFA_RANKING_AVAILABLE(a: string, b: string): boolean {
   return !!(FIFA_RANKING[a] && FIFA_RANKING[b]);
-  return !!(FIFA_RANKING[a] && FIFA_RANKING[b]);
 }

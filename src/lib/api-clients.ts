@@ -71,6 +71,33 @@ export async function apifPlayers(teamId: string) {
   return fetchJSON(`${APIF_BASE}/players?league=1&season=2026&team=${teamId}`, h);
 }
 
+// ── Tier 2 (Addendum) — gratis, butuh APIF_KEY, dalam kuota 100 req/hari ────
+export async function apifPredictions(fixtureId: string) {
+  const h = apifHeaders();
+  if (!h) throw new Error("APIF_KEY not configured");
+  return fetchJSON(`${APIF_BASE}/predictions?fixture=${fixtureId}`, h);
+}
+export async function apifSquads(teamId: string) {
+  const h = apifHeaders();
+  if (!h) throw new Error("APIF_KEY not configured");
+  return fetchJSON(`${APIF_BASE}/players/squads?team=${teamId}`, h);
+}
+export async function apifTeamStatistics(teamId: string) {
+  const h = apifHeaders();
+  if (!h) throw new Error("APIF_KEY not configured");
+  return fetchJSON(`${APIF_BASE}/teams/statistics?league=1&season=2026&team=${teamId}`, h);
+}
+export async function apifHeadToHead(id1: string, id2: string) {
+  const h = apifHeaders();
+  if (!h) throw new Error("APIF_KEY not configured");
+  return fetchJSON(`${APIF_BASE}/fixtures/headtohead?h2h=${id1}-${id2}`, h);
+}
+export async function apifCoachs(teamId: string) {
+  const h = apifHeaders();
+  if (!h) throw new Error("APIF_KEY not configured");
+  return fetchJSON(`${APIF_BASE}/coachs?team=${teamId}`, h);
+}
+
 // ── BALLDONTLIE (Teams/Stadiums = Free | semua lain = GOAT $39.99/bln) ───────
 function bdlHeaders(): Record<string, string> | null {
   const key = process.env.BALLDONTLIE_KEY;

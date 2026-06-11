@@ -78,6 +78,19 @@ export function useMatchEvents(matchId: string, isLive: boolean) {
   });
 }
 
+// Second-opinion prediction — API-Football /predictions (Tier 2 addendum)
+export function useAPIFPrediction(fixtureId: string, enabled = true) {
+  return useQuery({
+    queryKey: ["apif-prediction", fixtureId],
+    queryFn: () => fetchProxy<import("@/app/api/proxy/prediction/route").APIFPredictionData | null>(
+      `/api/proxy/prediction?fixtureId=${fixtureId}`
+    ),
+    enabled: enabled && !!fixtureId,
+    staleTime: 60 * 60_000,
+    retry: 0,
+  });
+}
+
 export interface HealthReport {
   summary: { appUsable: boolean; liveDataAvailable: boolean; message: string };
   services: { service: string; status: string; detail: string; latencyMs?: number }[];

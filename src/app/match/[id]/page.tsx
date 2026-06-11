@@ -12,7 +12,7 @@ import { AIAnalysisPanel } from "@/components/AIAnalysisPanel";
 import { CoachComparison } from "@/components/CoachComparison";
 import { CommentaryFeed } from "@/components/MatchPanels";
 import { ScoreEvaluation, PostMatchPanel } from "@/components/EvaluationPanels";
-import { PredictionPanel } from "@/components/PredictionPanel";
+import { PredictionPanel, SecondOpinionPanel } from "@/components/PredictionPanel";
 import { PlayersPanel } from "@/components/PlayersPanel";
 import { H2HPanel } from "@/components/H2HPanel";
 import { StatRadarChart } from "@/components/StatChart";
@@ -194,6 +194,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
           {prediction && (
             <PredictionPanel fixture={fixture} prediction={prediction} />
           )}
+          <SecondOpinionPanel fixture={fixture} />
           <AIAnalysisPanel
             home={home} away={away}
             homeCoach={homeCoach} awayCoach={awayCoach}

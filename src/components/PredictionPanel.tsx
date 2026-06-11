@@ -5,6 +5,7 @@ import type { RealFixture } from "@/lib/wc2026-data";
 import { WC2026_TEAMS } from "@/lib/wc2026-data";
 import { isPredictionLocked } from "@/lib/scoring";
 import { useStore } from "@/lib/store";
+import { useAPIFPrediction } from "@/hooks";
 
 interface Props {
   fixture: RealFixture;
@@ -198,6 +199,49 @@ function FactorBreakdown({ factors }: { factors: PredictionResult["factors"] }) 
             );
           })}
         </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Second opinion — API-Football /predictions (Tier 2 addendum, gratis dalam kuota 100 req/hari)
+ * Ditampilkan sebagai pembanding terhadap Prediction Score Engine internal.
+ */
+export function SecondOpinionPanel({ fixture }: { fixture: RealFixture }) {
+  const { data, isLoading } = useAPIFPrediction(fixture.id);
+  const opinion = data?.data;
+
+  if (isLoading) return null;
+  if (!opinion || (!opinion.winner && !opinion.advice)) return null;
+
+  return (
+    <div className="rounded-xl border border-pitch-700 bg-pitch-900/60 p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-ink-hi">🆚 Second Opinion — API-Football</h3>
+        <span className="rounded bg-pitch-700 px-2 py-0.5 text-[10px] text-ink-low">Gratis</span>
+      </div>
+      <div className="grid grid-cols-3 gap-2 text-center text-xs">
+        <div className="rounded-lg bg-pitch-950/40 p-2">
+          <div className="text-[10px] text-ink-low">{fixture.homeName}</div>
+          <div className="tabular text-base font-bold text-gold">{opinion.percent.home}</div>
+        </div>
+        <div className="rounded-lg bg-pitch-950/40 p-2">
+          <div className="text-[10px] text-ink-low">Seri</div>
+          <div className="tabular text-base font-bold text-ink-mid">{opinion.percent.draw}</div>
+        </div>
+        <div className="rounded-lg bg-pitch-950/40 p-2">
+          <div className="text-[10px] text-ink-low">{fixture.awayName}</div>
+          <div className="tabular text-base font-bold text-win">{opinion.percent.away}</div>
+        </div>
+      </div>
+      {(opinion.goals.home || opinion.goals.away) && (
+        <p className="tabular mt-2 text-center text-[11px] text-ink-mid">
+          Prediksi gol: {opinion.goals.home ?? "?"} – {opinion.goals.away ?? "?"}
+        </p>
+      )}
+      {opinion.advice && (
+        <p className="mt-2 text-center text-[11px] italic text-ink-low">"{opinion.advice}"</p>
       )}
     </div>
   );
