@@ -1,6 +1,7 @@
 // Mapper respons eksternal → RealFixture internal
 // worldcup26.ir (JWT gratis) + API-Football (free tier 100 req/hari)
 import type { RealFixture } from "./wc2026-data";
+import { WC2026_GROUPS } from "./wc2026-data";
 
 // ---------- worldcup26.ir ----------
 // Shape: { id, home_team, away_team, home_score, away_score, status, group, stage, date, time, stadium }
@@ -22,7 +23,10 @@ export function mapWC26Game(raw: Record<string, unknown>): RealFixture {
     awayId: normaliseCode(String(away.code ?? "")),
     awayName: String(away.name ?? raw.away_team ?? ""),
     kickoff: buildKickoff(String(raw.date ?? ""), String(raw.time ?? "")),
-    group: String(raw.group ?? ""),
+    group: normaliseGroup(raw.group) || groupFromTeams(
+      normaliseCode(String(home.code ?? "")),
+      normaliseCode(String(away.code ?? ""))
+    ),
     venue: String(raw.stadium ?? raw.venue ?? ""),
     status: statusMap[String(raw.status ?? "")] ?? "SCHEDULED",
     homeScore: ft.home != null ? Number(ft.home) : null,
@@ -53,7 +57,10 @@ export function mapAPIFootballFixture(raw: Record<string, unknown>): RealFixture
     awayId: normaliseCode(String(away.code ?? away.name ?? "")),
     awayName: String(away.name ?? ""),
     kickoff: String(fixture.date ?? ""),
-    group: String(league.round ?? ""),
+    group: normaliseGroup(league.round) || groupFromTeams(
+      normaliseCode(String(home.code ?? home.name ?? "")),
+      normaliseCode(String(away.code ?? away.name ?? ""))
+    ),
     venue: String((fixture.venue as Record<string, unknown>)?.name ?? ""),
     status: statusMap[String(status.short ?? "")] ?? "SCHEDULED",
     homeScore: goals.home != null ? Number(goals.home) : null,
@@ -100,6 +107,27 @@ export function mapAPIFootballLineup(raw: Record<string, unknown>[]): MatchLineu
 // ---------- helpers ----------
 function normaliseCode(code: string): string {
   return code.toLowerCase().replace(/\s+/g, "").slice(0, 5);
+}
+
+// Canonical group format: "Group A" - "Group L".
+// Sumber eksternal kadang mengirim "A", "Group A", atau "Group Stage - 1" (matchday, bukan grup).
+function normaliseGroup(raw: unknown): string {
+  const s = String(raw ?? "").trim();
+  if (!s) return "";
+  if (/^Group [A-L]$/i.test(s)) {
+    return `Group ${s.slice(-1).toUpperCase()}`;
+  }
+  const m = s.match(/^[A-L]$/i);
+  if (m) return `Group ${m[0].toUpperCase()}`;
+  return "";
+}
+
+// Fallback: cari grup berdasarkan kedua tim di WC2026_GROUPS
+function groupFromTeams(homeId: string, awayId: string): string {
+  for (const [group, teams] of Object.entries(WC2026_GROUPS)) {
+    if (teams.includes(homeId) && teams.includes(awayId)) return group;
+  }
+  return "";
 }
 
 function buildKickoff(date: string, time: string): string {
