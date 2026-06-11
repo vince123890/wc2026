@@ -149,6 +149,51 @@ export function mapAPIFootballLineup(raw: Record<string, unknown>[]): MatchLineu
   return { home: mapTeam(raw[0] as Record<string, unknown>), away: mapTeam(raw[1] as Record<string, unknown>) };
 }
 
+// ---------- BALLDONTLIE group standings ----------
+// Shape: { data: [{ team: { abbreviation, name }, group: { name }, position, played,
+//                    won, drawn, lost, goals_for, goals_against, goal_difference, points }] }
+import type { StandingRow } from "./standings-types";
+
+const FIFA_CODE_TO_ID: Record<string, string> = Object.fromEntries(
+  Object.values(WC2026_TEAMS).map((t) => [t.fifaCode, t.id])
+);
+
+export function mapBDLGroupStandings(raw: { data?: Record<string, unknown>[] }): Record<string, StandingRow[]> {
+  const out: Record<string, StandingRow[]> = {};
+  for (const row of raw.data ?? []) {
+    const team = (row.team as Record<string, unknown>) ?? {};
+    const group = (row.group as Record<string, unknown>) ?? {};
+    const groupName = String(group.name ?? "");
+    const code = String(team.abbreviation ?? "");
+    const teamId = FIFA_CODE_TO_ID[code] ?? code.toLowerCase();
+    const wcTeam = WC2026_TEAMS[teamId];
+
+    const standing: StandingRow = {
+      teamId,
+      name: wcTeam?.name ?? String(team.name ?? code),
+      flag: wcTeam?.flag ?? "🏳️",
+      played: Number(row.played ?? 0),
+      won: Number(row.won ?? 0),
+      drawn: Number(row.drawn ?? 0),
+      lost: Number(row.lost ?? 0),
+      gf: Number(row.goals_for ?? 0),
+      ga: Number(row.goals_against ?? 0),
+      gd: Number(row.goal_difference ?? 0),
+      pts: Number(row.points ?? 0),
+      position: Number(row.position ?? 0),
+      confederation: String(team.confederation ?? wcTeam?.confed ?? ""),
+    };
+
+    if (!out[groupName]) out[groupName] = [];
+    out[groupName].push(standing);
+  }
+  // Urutan posisi resmi dari BALLDONTLIE sudah final (poin → SG → GM)
+  for (const rows of Object.values(out)) {
+    rows.sort((x, y) => (x.position ?? 0) - (y.position ?? 0));
+  }
+  return out;
+}
+
 // ---------- helpers ----------
 function normaliseCode(code: string): string {
   return code.toLowerCase().replace(/\s+/g, "").slice(0, 5);

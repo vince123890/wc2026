@@ -1,20 +1,9 @@
 // Hitung klasemen dari hasil pertandingan nyata. Sebelum turnamen mulai,
 // semua tim 0 main / 0 poin (akurat — WC 2026 baru kickoff 11 Juni 2026).
 import { WC2026_GROUPS, WC2026_FIXTURES, WC2026_TEAMS, type RealFixture } from "./wc2026-data";
+import type { StandingRow } from "./standings-types";
 
-export interface StandingRow {
-  teamId: string;
-  name: string;
-  flag: string;
-  played: number;
-  won: number;
-  drawn: number;
-  lost: number;
-  gf: number;
-  ga: number;
-  gd: number;
-  pts: number;
-}
+export type { StandingRow };
 
 function emptyRow(teamId: string): StandingRow {
   const t = WC2026_TEAMS[teamId];

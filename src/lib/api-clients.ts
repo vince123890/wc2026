@@ -105,6 +105,7 @@ function bdlHeaders(): Record<string, string> | null {
   return key ? { Authorization: key } : null;
 }
 export async function bdlTeams()   { const h = bdlHeaders(); if (!h) throw new Error("BALLDONTLIE_KEY not configured"); return fetchJSON(`${BDL_BASE}/teams`, h); }
+export async function bdlGroupStandings() { const h = bdlHeaders(); if (!h) throw new Error("BALLDONTLIE_KEY not configured"); return fetchJSON(`${BDL_BASE}/group_standings`, h); }
 export async function bdlMatches(params = "") { const h = bdlHeaders(); if (!h) throw new Error("BALLDONTLIE_KEY not configured"); return fetchJSON(`${BDL_BASE}/matches${params}`, h); }
 export async function bdlLineups(matchId: string) { const h = bdlHeaders(); if (!h) throw new Error("BALLDONTLIE_KEY not configured"); return fetchJSON(`${BDL_BASE}/lineups?match_ids[]=${encodeURIComponent(matchId)}`, h); }
 export async function bdlEvents(matchId: string)  { const h = bdlHeaders(); if (!h) throw new Error("BALLDONTLIE_KEY not configured"); return fetchJSON(`${BDL_BASE}/events?match_ids[]=${encodeURIComponent(matchId)}`, h); }

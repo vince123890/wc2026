@@ -1,9 +1,21 @@
 "use client";
-import { computeStandings } from "@/lib/standings";
-import { WC2026_FIXTURES } from "@/lib/wc2026-data";
+import { computeStandings, type StandingRow } from "@/lib/standings";
+import { WC2026_FIXTURES, WC2026_GROUPS } from "@/lib/wc2026-data";
+import { useStandings } from "@/hooks";
 
 export default function StandingsPage() {
-  const standings = computeStandings();
+  const { data } = useStandings();
+
+  const fallback = computeStandings();
+  const remote = data?.source === "balldontlie" ? (data.data as Record<string, StandingRow[]>) : null;
+  const standings = remote ?? fallback;
+  const isOfficial = !!remote;
+
+  const groupOrder = Object.keys(WC2026_GROUPS);
+  const orderedStandings = groupOrder
+    .filter((g) => standings[g])
+    .map((g) => [g, standings[g]] as const);
+
   const anyPlayed = Object.values(standings).some((rows) => rows.some((r) => r.played > 0));
   const firstKickoff = new Date(WC2026_FIXTURES[0]?.kickoff ?? Date.now());
   const started = Date.now() >= firstKickoff.getTime();
@@ -12,7 +24,10 @@ export default function StandingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-bold text-ink-hi">Klasemen Grup</h1>
-        <p className="text-xs text-ink-low">FIFA World Cup 2026 · 48 tim · 12 grup (A–L)</p>
+        <p className="text-xs text-ink-low">
+          FIFA World Cup 2026 · 48 tim · 12 grup (A–L)
+          {isOfficial && <span className="ml-2 text-gold">· Data resmi BALLDONTLIE</span>}
+        </p>
       </div>
 
       {!started && !anyPlayed && (
@@ -26,26 +41,41 @@ export default function StandingsPage() {
       )}
 
       <div className="grid gap-5 lg:grid-cols-2">
-        {Object.entries(standings).map(([group, rows]) => (
+        {orderedStandings.map(([group, rows]) => (
           <div key={group} className="overflow-hidden rounded-xl border border-pitch-700">
             <div className="bg-pitch-900 px-3 py-2 text-sm font-semibold text-gold">{group}</div>
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-[11px] uppercase text-ink-low">
+                  <th className="px-2 py-1.5 text-center font-medium">#</th>
                   <th className="px-3 py-1.5 text-left font-medium">Tim</th>
-                  <th className="px-2 py-1.5 text-center font-medium">M</th>
-                  <th className="px-2 py-1.5 text-center font-medium">SG</th>
+                  <th className="px-1.5 py-1.5 text-center font-medium">M</th>
+                  <th className="px-1.5 py-1.5 text-center font-medium">W</th>
+                  <th className="px-1.5 py-1.5 text-center font-medium">S</th>
+                  <th className="px-1.5 py-1.5 text-center font-medium">K</th>
+                  <th className="px-1.5 py-1.5 text-center font-medium">GM</th>
+                  <th className="px-1.5 py-1.5 text-center font-medium">GK</th>
+                  <th className="px-1.5 py-1.5 text-center font-medium">SG</th>
                   <th className="px-2 py-1.5 text-center font-medium">Poin</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={r.teamId} className={`border-t border-pitch-800 ${i < 2 && anyPlayed ? "bg-win/5" : ""}`}>
+                    <td className="tabular px-2 py-2 text-center text-ink-low">{r.position ?? i + 1}</td>
                     <td className="px-3 py-2 text-ink-hi">
                       {r.flag} {r.name}
+                      {r.confederation && (
+                        <span className="ml-1.5 text-[10px] font-normal text-ink-low">{r.confederation}</span>
+                      )}
                     </td>
-                    <td className="tabular px-2 py-2 text-center text-ink-mid">{r.played}</td>
-                    <td className="tabular px-2 py-2 text-center text-ink-mid">
+                    <td className="tabular px-1.5 py-2 text-center text-ink-mid">{r.played}</td>
+                    <td className="tabular px-1.5 py-2 text-center text-ink-mid">{r.won}</td>
+                    <td className="tabular px-1.5 py-2 text-center text-ink-mid">{r.drawn}</td>
+                    <td className="tabular px-1.5 py-2 text-center text-ink-mid">{r.lost}</td>
+                    <td className="tabular px-1.5 py-2 text-center text-ink-mid">{r.gf}</td>
+                    <td className="tabular px-1.5 py-2 text-center text-ink-mid">{r.ga}</td>
+                    <td className="tabular px-1.5 py-2 text-center text-ink-mid">
                       {r.gd > 0 ? "+" : ""}
                       {r.gd}
                     </td>
