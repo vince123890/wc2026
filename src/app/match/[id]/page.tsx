@@ -181,6 +181,16 @@ export default function MatchPage({ params }: { params: { id: string } }) {
         <div className="mt-3 text-center text-[11px] text-ink-low">
           {fixture.venue} · {new Date(fixture.kickoff).toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short",timeZone:"Asia/Jakarta"})} WIB
         </div>
+        {((fixture.homeScorers?.length ?? 0) > 0 || (fixture.awayScorers?.length ?? 0) > 0) && (
+          <div className="mt-3 grid grid-cols-2 gap-4 text-[11px] text-ink-mid">
+            <div className="space-y-0.5 text-right">
+              {fixture.homeScorers?.map((s, i) => <div key={i}>⚽ {s}</div>)}
+            </div>
+            <div className="space-y-0.5 text-left">
+              {fixture.awayScorers?.map((s, i) => <div key={i}>⚽ {s}</div>)}
+            </div>
+          </div>
+        )}
         {canPredict(matchState) && countdown.secondsLeft > 0 && (
           <div className={`mt-2 text-center text-xs font-semibold ${countdown.isUnder10Min ? "text-live animate-pulse" : countdown.isUnder1Hour ? "text-gold" : "text-ink-mid"}`}>
             {countdown.isUnder10Min ? "⚠️ " : "⏱ "}Kickoff dalam {countdown.label}

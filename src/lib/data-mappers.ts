@@ -62,7 +62,21 @@ export function mapWC26Game(raw: Record<string, unknown>): RealFixture {
     status,
     homeScore: finished || elapsed !== "notstarted" ? Number(raw.home_score ?? 0) : null,
     awayScore: finished || elapsed !== "notstarted" ? Number(raw.away_score ?? 0) : null,
+    homeScorers: parseScorers(raw.home_scorers),
+    awayScorers: parseScorers(raw.away_scorers),
   };
+}
+
+// worldcup26.ir mengembalikan scorer sebagai string literal array Postgres dengan smart quotes,
+// mis. {"J. Quiñones 9'","R. Jiménez 67'"} atau "null" jika tidak ada gol.
+function parseScorers(raw: unknown): string[] {
+  const str = String(raw ?? "");
+  if (!str || str === "null") return [];
+  const inner = str.replace(/^\{|\}$/g, "");
+  return inner
+    .split(",")
+    .map((s) => s.trim().replace(/^[“"]|[”"]$/g, ""))
+    .filter(Boolean);
 }
 
 // ---------- API-Football (v3, RapidAPI) ----------

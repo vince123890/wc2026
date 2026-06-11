@@ -25,6 +25,8 @@ export interface RealFixture {
   status: string;
   homeScore?: number | null;
   awayScore?: number | null;
+  homeScorers?: string[];
+  awayScorers?: string[];
 }
 
 export const WC2026_TEAMS: Record<string, RealTeam> = {
