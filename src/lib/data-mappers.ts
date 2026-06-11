@@ -1,36 +1,67 @@
 // Mapper respons eksternal → RealFixture internal
 // worldcup26.ir (JWT gratis) + API-Football (free tier 100 req/hari)
 import type { RealFixture } from "./wc2026-data";
-import { WC2026_GROUPS } from "./wc2026-data";
+import { WC2026_GROUPS, WC2026_TEAMS } from "./wc2026-data";
+
+// Nama tim (en) → fifa code lowercase, untuk mencocokkan home_team_name_en/away_team_name_en
+const TEAM_NAME_TO_ID: Record<string, string> = Object.fromEntries(
+  Object.values(WC2026_TEAMS).map((t) => [t.name, t.id])
+);
+
+// worldcup26.ir memakai penamaan resmi FIFA yang berbeda dari WC2026_TEAMS untuk beberapa tim
+const TEAM_NAME_ALIASES: Record<string, string> = {
+  "Bosnia and Herzegovina": "Bosnia & Herzegovina",
+  "United States": "USA",
+  "Democratic Republic of the Congo": "DR Congo",
+};
+for (const [apiName, localName] of Object.entries(TEAM_NAME_ALIASES)) {
+  if (TEAM_NAME_TO_ID[localName]) TEAM_NAME_TO_ID[apiName] = TEAM_NAME_TO_ID[localName];
+}
+
+// worldcup26.ir "type" → nama round kanonis
+const WC26_TYPE_TO_ROUND: Record<string, string> = {
+  r32: "Round of 32",
+  r16: "Round of 16",
+  qf: "Quarter-final",
+  sf: "Semi-final",
+  third: "Match for third place",
+  final: "Final",
+};
 
 // ---------- worldcup26.ir ----------
-// Shape: { id, home_team, away_team, home_score, away_score, status, group, stage, date, time, stadium }
+// Shape aktual: { id, home_team_name_en, away_team_name_en, home_score, away_score,
+//                 group, matchday, type, local_date: "MM/DD/YYYY HH:mm",
+//                 finished, time_elapsed, stadium_id }
 export function mapWC26Game(raw: Record<string, unknown>): RealFixture {
-  const statusMap: Record<string, string> = {
-    NS: "SCHEDULED", "1H": "LIVE", HT: "HALF_TIME", "2H": "LIVE",
-    ET: "EXTRA_TIME", P: "PENALTY", FT: "FINISHED", AET: "FINISHED", PEN: "FINISHED",
-  };
-  const home = (raw.home_team as Record<string, unknown>) ?? {};
-  const away = (raw.away_team as Record<string, unknown>) ?? {};
-  const score = (raw.score as Record<string, unknown>) ?? {};
-  const ft = (score.fulltime as Record<string, unknown>) ?? {};
+  const homeName = String(raw.home_team_name_en ?? "");
+  const awayName = String(raw.away_team_name_en ?? "");
+  const homeId = TEAM_NAME_TO_ID[homeName] ?? null;
+  const awayId = TEAM_NAME_TO_ID[awayName] ?? null;
+
+  const type = String(raw.type ?? "group");
+  const round = type === "group"
+    ? `Matchday ${raw.matchday ?? "1"}`
+    : WC26_TYPE_TO_ROUND[type] ?? type;
+
+  const finished = String(raw.finished ?? "FALSE").toUpperCase() === "TRUE";
+  const elapsed = String(raw.time_elapsed ?? "notstarted");
+  let status = "SCHEDULED";
+  if (finished) status = "FINISHED";
+  else if (elapsed !== "notstarted" && elapsed !== "") status = elapsed.toLowerCase() === "ht" ? "HALF_TIME" : "LIVE";
 
   return {
     id: `wc26-${raw.id}`,
-    round: String(raw.round ?? raw.stage ?? ""),
-    homeId: normaliseCode(String(home.code ?? "")),
-    homeName: String(home.name ?? raw.home_team ?? ""),
-    awayId: normaliseCode(String(away.code ?? "")),
-    awayName: String(away.name ?? raw.away_team ?? ""),
-    kickoff: buildKickoff(String(raw.date ?? ""), String(raw.time ?? "")),
-    group: normaliseGroup(raw.group) || groupFromTeams(
-      normaliseCode(String(home.code ?? "")),
-      normaliseCode(String(away.code ?? ""))
-    ),
-    venue: String(raw.stadium ?? raw.venue ?? ""),
-    status: statusMap[String(raw.status ?? "")] ?? "SCHEDULED",
-    homeScore: ft.home != null ? Number(ft.home) : null,
-    awayScore: ft.away != null ? Number(ft.away) : null,
+    round,
+    homeId,
+    homeName,
+    awayId,
+    awayName,
+    kickoff: parseLocalDate(String(raw.local_date ?? "")),
+    group: normaliseGroup(raw.group) || groupFromTeams(homeId ?? "", awayId ?? ""),
+    venue: "",
+    status,
+    homeScore: finished || elapsed !== "notstarted" ? Number(raw.home_score ?? 0) : null,
+    awayScore: finished || elapsed !== "notstarted" ? Number(raw.away_score ?? 0) : null,
   };
 }
 
@@ -130,9 +161,10 @@ function groupFromTeams(homeId: string, awayId: string): string {
   return "";
 }
 
-function buildKickoff(date: string, time: string): string {
-  if (!date) return new Date().toISOString();
-  if (date.includes("T")) return date;
-  const t = time.replace(" UTC", "").trim() || "00:00";
-  return `${date}T${t.length === 5 ? t : "00:00"}:00Z`;
+// worldcup26.ir local_date format: "MM/DD/YYYY HH:mm" → UTC ISO string
+function parseLocalDate(local: string): string {
+  const m = local.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/);
+  if (!m) return new Date().toISOString();
+  const [, mm, dd, yyyy, hh, min] = m;
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}:00Z`;
 }
