@@ -56,7 +56,7 @@ export function mapWC26Game(raw: Record<string, unknown>): RealFixture {
     homeName,
     awayId,
     awayName,
-    kickoff: parseLocalDate(String(raw.local_date ?? "")),
+    kickoff: parseLocalDate(String(raw.local_date ?? ""), String(raw.stadium_id ?? "")),
     group: normaliseGroup(raw.group) || groupFromTeams(homeId ?? "", awayId ?? ""),
     venue: "",
     status,
@@ -161,10 +161,23 @@ function groupFromTeams(homeId: string, awayId: string): string {
   return "";
 }
 
-// worldcup26.ir local_date format: "MM/DD/YYYY HH:mm" → UTC ISO string
-function parseLocalDate(local: string): string {
+// worldcup26.ir "local_date" adalah waktu lokal venue (bukan UTC) tanpa info zona waktu.
+// Pemetaan stadium_id → offset UTC saat WC2026 (Juni-Juli, DST aktif di AS/Kanada):
+// Meksiko (UTC-6, tanpa DST) = +6, Central AS/Kanada (CDT, UTC-5) = +5,
+// Eastern AS/Kanada (EDT, UTC-4) = +4, Western AS/Kanada (PDT, UTC-7) = +7.
+const STADIUM_UTC_OFFSET: Record<string, number> = {
+  "1": 6, "2": 6, "3": 6,   // Mexico City, Guadalajara, Monterrey
+  "4": 5, "5": 5, "6": 5,   // Dallas, Houston, Kansas City
+  "7": 4, "8": 4, "9": 4, "10": 4, "11": 4, "12": 4, // Atlanta, Miami, Boston, Philadelphia, NY/NJ, Toronto
+  "13": 7, "14": 7, "15": 7, "16": 7, // Vancouver, Seattle, San Francisco Bay Area, Los Angeles
+};
+
+// worldcup26.ir local_date format: "MM/DD/YYYY HH:mm" (waktu lokal venue) → UTC ISO string
+function parseLocalDate(local: string, stadiumId?: string): string {
   const m = local.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/);
   if (!m) return new Date().toISOString();
   const [, mm, dd, yyyy, hh, min] = m;
-  return `${yyyy}-${mm}-${dd}T${hh}:${min}:00Z`;
+  const offset = STADIUM_UTC_OFFSET[stadiumId ?? ""] ?? 0;
+  const utcMs = Date.UTC(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh) + offset, Number(min));
+  return new Date(utcMs).toISOString();
 }
