@@ -241,7 +241,7 @@ export function SecondOpinionPanel({ fixture }: { fixture: RealFixture }) {
         </p>
       )}
       {opinion.advice && (
-        <p className="mt-2 text-center text-[11px] italic text-ink-low">"{opinion.advice}"</p>
+        <p className="mt-2 text-center text-[11px] italic text-ink-low">&ldquo;{opinion.advice}&rdquo;</p>
       )}
     </div>
   );
