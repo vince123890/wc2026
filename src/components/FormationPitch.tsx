@@ -32,12 +32,14 @@ function lineOf(pos: string): (typeof LINE_ORDER)[number] {
   return "FWD";
 }
 
-function Marker({ p, color, side, editable, onDragEnd }: {
-  p: LineupPlayer; color: string; side: "home" | "away"; editable?: boolean;
+function Marker({ p, color, side, editable, selected, onDragEnd, onSelect }: {
+  p: LineupPlayer; color: string; side: "home" | "away"; editable?: boolean; selected?: boolean;
   onDragEnd?: (playerId: string, x: number, y: number) => void;
+  onSelect?: (playerId: string) => void;
 }) {
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [downPos, setDownPos] = useState<{ x: number; y: number } | null>(null);
 
   if (p.x === undefined || p.y === undefined) return null;
   const cx = dragPos?.x ?? p.x;
@@ -61,6 +63,7 @@ function Marker({ p, color, side, editable, onDragEnd }: {
   function handlePointerDown(e: React.PointerEvent<SVGGElement>) {
     if (!editable) return;
     e.currentTarget.setPointerCapture(e.pointerId);
+    setDownPos({ x: e.clientX, y: e.clientY });
     setDragging(true);
     const pt = toSvgPoint(e);
     if (pt) setDragPos(pt);
@@ -76,9 +79,15 @@ function Marker({ p, color, side, editable, onDragEnd }: {
     if (!editable || !dragging) return;
     e.currentTarget.releasePointerCapture(e.pointerId);
     setDragging(false);
-    const pt = toSvgPoint(e) ?? dragPos;
-    if (pt) onDragEnd?.(p.id, pt.x, pt.y);
+    const moved = downPos && (Math.abs(e.clientX - downPos.x) > 4 || Math.abs(e.clientY - downPos.y) > 4);
+    if (moved) {
+      const pt = toSvgPoint(e) ?? dragPos;
+      if (pt) onDragEnd?.(p.id, pt.x, pt.y);
+    } else {
+      onSelect?.(p.id);
+    }
     setDragPos(null);
+    setDownPos(null);
   }
 
   return (
@@ -88,6 +97,7 @@ function Marker({ p, color, side, editable, onDragEnd }: {
       onPointerUp={handlePointerUp}
       style={editable ? { cursor: dragging ? "grabbing" : "grab" } : undefined}
     >
+      {selected && <circle cx={cx} cy={cy} r={22} fill="none" stroke="#fff" strokeWidth={2} strokeDasharray="3 2" />}
       <circle cx={cx} cy={cy} r={dragging ? 19 : 17} fill={color} stroke="#07120c" strokeWidth={2} opacity={dragging ? 0.85 : 1} />
       <text x={cx} y={cy + 4} textAnchor="middle" fontSize={12} fontWeight={700} fill="#07120c">
         {p.jersey}
@@ -100,14 +110,31 @@ function Marker({ p, color, side, editable, onDragEnd }: {
   );
 }
 
-export function FormationPitch({ lineups, homeId, awayId, editable, onPlayerMove }: {
+export function FormationPitch({ lineups, homeId, awayId, editable, onPlayerMove, onSwap }: {
   lineups: MatchLineups; homeId: string; awayId: string;
   editable?: boolean;
   onPlayerMove?: (side: "home" | "away", playerId: string, x: number, y: number) => void;
+  onSwap?: (side: "home" | "away", starterId: string, benchId: string) => void;
 }) {
   const mobile = useIsMobilePortrait();
   const homeColor = "#e8b54a"; // gold for home
   const awayColor = "#4ade80"; // green for away
+  const [selected, setSelected] = useState<{ side: "home" | "away"; playerId: string } | null>(null);
+
+  function handleSelect(side: "home" | "away", playerId: string) {
+    if (selected?.side === side && selected.playerId === playerId) {
+      setSelected(null);
+    } else {
+      setSelected({ side, playerId });
+    }
+  }
+
+  function handleBenchClick(side: "home" | "away", benchId: string) {
+    if (selected?.side === side) {
+      onSwap?.(side, selected.playerId, benchId);
+      setSelected(null);
+    }
+  }
 
   if (mobile) {
     return (
@@ -147,13 +174,48 @@ export function FormationPitch({ lineups, homeId, awayId, editable, onPlayerMove
         </g>
         {lineups.home.starters.map((p) => (
           <Marker key={p.id} p={p} color={homeColor} side="home" editable={editable}
-            onDragEnd={(playerId, x, y) => onPlayerMove?.("home", playerId, x, y)} />
+            selected={selected?.side === "home" && selected.playerId === p.id}
+            onDragEnd={(playerId, x, y) => onPlayerMove?.("home", playerId, x, y)}
+            onSelect={(playerId) => handleSelect("home", playerId)} />
         ))}
         {lineups.away.starters.map((p) => (
           <Marker key={p.id} p={p} color={awayColor} side="away" editable={editable}
-            onDragEnd={(playerId, x, y) => onPlayerMove?.("away", playerId, x, y)} />
+            selected={selected?.side === "away" && selected.playerId === p.id}
+            onDragEnd={(playerId, x, y) => onPlayerMove?.("away", playerId, x, y)}
+            onSelect={(playerId) => handleSelect("away", playerId)} />
         ))}
       </svg>
+      {editable && (lineups.home.bench.length > 0 || lineups.away.bench.length > 0) && (
+        <div className="grid grid-cols-2 gap-2 border-t border-pitch-700 bg-pitch-900/60 p-2">
+          <BenchPanel bench={lineups.home.bench}
+            active={selected?.side === "home"}
+            onClick={(benchId) => handleBenchClick("home", benchId)} />
+          <BenchPanel bench={lineups.away.bench}
+            active={selected?.side === "away"}
+            onClick={(benchId) => handleBenchClick("away", benchId)} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BenchPanel({ bench, active, onClick }: { bench: LineupPlayer[]; active?: boolean; onClick: (benchId: string) => void }) {
+  if (bench.length === 0) return <div />;
+  return (
+    <div className="space-y-1">
+      <div className="text-[10px] uppercase tracking-wide text-ink-low">
+        Cadangan {active && <span className="text-gold">— pilih untuk tukar</span>}
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {bench.map((p) => (
+          <button key={p.id} onClick={() => onClick(p.id)}
+            disabled={!active}
+            className={`rounded-md border px-1.5 py-0.5 text-[10px] ${
+              active ? "border-gold/60 text-ink-hi hover:bg-gold/10 cursor-pointer" : "border-pitch-700 text-ink-low cursor-default"}`}>
+            #{p.jersey} {p.short ?? p.name} <span className="text-ink-low">({p.pos})</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

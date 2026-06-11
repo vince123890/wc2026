@@ -14,6 +14,7 @@ export interface EvaluatedPrediction extends Prediction {
 export interface CustomLineupSide {
   formation?: string;
   positions?: Record<string, { x: number; y: number }>;
+  swaps?: [string, string][]; // pasangan [starterId, benchId] yang ditukar
 }
 
 export interface CustomLineup {
@@ -39,6 +40,7 @@ interface AppState {
   setApifKey: (key: string | null) => void;
   setCustomFormation: (matchId: string, side: "home" | "away", formation: string) => void;
   setCustomPlayerPos: (matchId: string, side: "home" | "away", playerId: string, x: number, y: number) => void;
+  swapLineupPlayer: (matchId: string, side: "home" | "away", starterId: string, benchId: string) => void;
   resetCustomLineup: (matchId: string, side?: "home" | "away") => void;
   setOnboardingDone: () => void;
 }
@@ -136,6 +138,21 @@ export const useStore = create<AppState>((set, get) => ({
     const customLineups = {
       ...get().customLineups,
       [matchId]: { ...existing, [side]: { ...sideState, positions } },
+    };
+    set({ customLineups });
+    persist({ ...get(), customLineups });
+  },
+
+  swapLineupPlayer: (matchId, side, starterId, benchId) => {
+    const existing = get().customLineups[matchId] ?? {};
+    const sideState = existing[side] ?? {};
+    const swaps = sideState.swaps ?? [];
+    // Jika pasangan ini sudah pernah ditukar, batalkan (toggle kembali)
+    const idx = swaps.findIndex(([a, b]) => (a === starterId && b === benchId) || (a === benchId && b === starterId));
+    const nextSwaps = idx >= 0 ? swaps.filter((_, i) => i !== idx) : [...swaps, [starterId, benchId] as [string, string]];
+    const customLineups = {
+      ...get().customLineups,
+      [matchId]: { ...existing, [side]: { ...sideState, swaps: nextSwaps } },
     };
     set({ customLineups });
     persist({ ...get(), customLineups });

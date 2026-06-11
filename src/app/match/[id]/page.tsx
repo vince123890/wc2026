@@ -50,7 +50,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
   const fixture = fxData?.fixtures.find((f) => f.id === id);
   const matchState = useMatchState(fixture ?? { id:"",status:"SCHEDULED",kickoff:new Date().toISOString(),round:"",homeName:"",awayName:"",homeId:null,awayId:null,group:"",venue:"" });
   const countdown = useCountdown(fixture?.kickoff ?? new Date().toISOString());
-  const { apiKey, apiProvider, predictions, customLineups, setCustomFormation, setCustomPlayerPos, resetCustomLineup } = useStore();
+  const { apiKey, apiProvider, predictions, customLineups, setCustomFormation, setCustomPlayerPos, swapLineupPlayer, resetCustomLineup } = useStore();
   const live = isLiveState(matchState);
   const isFinished = ["FINISHED","EVALUATED"].includes(fixture?.status ?? "");
 
@@ -89,6 +89,20 @@ export default function MatchPage({ params }: { params: { id: string } }) {
       let result = lineup;
       if (custom?.formation && custom.formation !== lineup.formation) {
         result = applyFormation(lineup, custom.formation, side);
+      }
+      if (custom?.swaps?.length) {
+        for (const [starterId, benchId] of custom.swaps) {
+          const starterIdx = result.starters.findIndex((p) => p.id === starterId);
+          const benchIdx = result.bench.findIndex((p) => p.id === benchId);
+          if (starterIdx === -1 || benchIdx === -1) continue;
+          const starter = result.starters[starterIdx];
+          const benchPlayer = result.bench[benchIdx];
+          const newStarters = [...result.starters];
+          newStarters[starterIdx] = { ...benchPlayer, pos: starter.pos, x: starter.x, y: starter.y, captain: starter.captain };
+          const newBench = [...result.bench];
+          newBench[benchIdx] = { ...starter, pos: benchPlayer.pos, x: undefined, y: undefined, captain: undefined };
+          result = { ...result, starters: newStarters, bench: newBench };
+        }
       }
       if (custom?.positions) {
         result = {
@@ -237,7 +251,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
                 </div>
               )}
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-pitch-700 bg-pitch-900/40 px-3 py-2 text-[11px]">
-                <span className="text-gold">✏️ Geser pemain atau ganti formasi — perubahan memengaruhi prediksi & analisis AI.</span>
+                <span className="text-gold">✏️ Geser pemain, ganti formasi, atau klik pemain lalu klik cadangan untuk menukar — perubahan memengaruhi prediksi & analisis AI.</span>
                 <div className="flex flex-wrap items-center gap-2">
                   <FormationSelect label={fixture.homeName} value={effectiveLineups.home.formation}
                     onChange={(f) => setCustomFormation(id, "home", f)} />
@@ -253,7 +267,8 @@ export default function MatchPage({ params }: { params: { id: string } }) {
               </div>
               <FormationPitch lineups={effectiveLineups} homeId={fixture.homeId!} awayId={fixture.awayId!}
                 editable
-                onPlayerMove={(side, playerId, x, y) => setCustomPlayerPos(id, side, playerId, x, y)} />
+                onPlayerMove={(side, playerId, x, y) => setCustomPlayerPos(id, side, playerId, x, y)}
+                onSwap={(side, starterId, benchId) => swapLineupPlayer(id, side, starterId, benchId)} />
             </div>
           : <EmptyState
               title="Lineup belum tersedia"

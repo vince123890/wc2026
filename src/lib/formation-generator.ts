@@ -159,7 +159,18 @@ export function generateProjectedLineup(
     };
   });
 
-  return { formation, confirmed: false, starters, bench: [] };
+  // Sisa pemain di pool (tidak masuk starting XI) jadi cadangan
+  const bench: LineupPlayer[] = Object.entries(pool).flatMap(([group, players]) =>
+    players.map((player) => ({
+      id: `proj-${side}-${player.short}`,
+      name: player.name,
+      short: player.short,
+      pos: group,
+      jersey: player.jersey,
+    }))
+  );
+
+  return { formation, confirmed: false, starters, bench };
 }
 
 /**
