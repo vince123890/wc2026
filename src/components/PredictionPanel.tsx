@@ -172,9 +172,10 @@ function FactorBreakdown({ factors }: { factors: PredictionResult["factors"] }) 
   const [open, setOpen] = useState(false);
   const items = [
     { label: "Ranking FIFA", val: factors.ranking, icon: "🏅" },
+    { label: "Form turnamen WC 2026", val: factors.form, icon: "🔥" },
     { label: "Taktis + Formasi", val: factors.tactical, icon: "♟️" },
-    { label: "Head-to-Head historis", val: factors.h2h, icon: "📜" },
     { label: "Kekuatan lineup", val: factors.lineup, icon: "👕" },
+    { label: "Head-to-Head historis", val: factors.h2h, icon: "📜" },
     { label: "Kualitas pelatih", val: factors.coach, icon: "🧠" },
   ];
   return (

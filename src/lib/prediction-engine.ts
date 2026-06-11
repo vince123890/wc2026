@@ -5,6 +5,8 @@ import { rankingFactor, getStrength, FIFA_RANKING } from "./fifa-ranking";
 import { h2hFactor } from "./h2h-data";
 import type { Coach, MatchLineups } from "./types";
 import { getLineupStrength } from "./key-players";
+import { computeStandings } from "./standings";
+import type { StandingRow } from "./standings-types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tactical Matchup Engine (FR-26)
@@ -83,7 +85,36 @@ export function calculateTacticalMatchup(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Prediction Score Engine — Poisson model berbasis 5 faktor
+// Current Form Engine — performa nyata dari pertandingan WC 2026 yang sudah selesai
+// ─────────────────────────────────────────────────────────────────────────────
+
+let standingsCache: Record<string, StandingRow[]> | null = null;
+
+function findStandingRow(teamId: string): StandingRow | null {
+  if (!standingsCache) standingsCache = computeStandings();
+  for (const rows of Object.values(standingsCache)) {
+    const row = rows.find((r) => r.teamId === teamId);
+    if (row) return row;
+  }
+  return null;
+}
+
+/**
+ * Form factor dari hasil pertandingan nyata yang sudah dimainkan: -1 to +1.
+ * Menggabungkan poin per laga (vs rata-rata 1.5) dan selisih gol per laga.
+ * Tim yang belum bertanding (played === 0) mengembalikan 0 (netral).
+ */
+function currentFormFactor(teamId: string): number {
+  const row = findStandingRow(teamId);
+  if (!row || row.played === 0) return 0;
+  const ppgDelta = (row.pts / row.played - 1.5) / 1.5; // -1 (selalu kalah) to +1 (selalu menang)
+  const gdPerGame = row.gd / row.played;
+  const gdDelta = Math.tanh(gdPerGame / 2); // selisih gol 2/laga ~ tanh(1)
+  return Math.max(-1, Math.min(1, ppgDelta * 0.6 + gdDelta * 0.4));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Prediction Score Engine — Poisson model berbasis 6 faktor
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Poisson probability: P(X=k) */
@@ -139,6 +170,7 @@ export interface PredictionResult {
     h2h: number;
     lineup: number;
     coach: number;
+    form: number;
   };
   explanation: string;
 }
@@ -152,17 +184,17 @@ export function calculatePrediction(
 ): PredictionResult {
   const BASE_LAMBDA = 1.25; // rata-rata gol per tim di WC
 
-  // Faktor 1: FIFA Ranking (bobot 30%)
+  // Faktor 1: FIFA Ranking (bobot 25%)
   const rankAdv = rankingFactor(homeId, awayId); // -1 to +1
 
-  // Faktor 2: Tactical matchup (bobot 25%)
+  // Faktor 2: Tactical matchup (bobot 20%)
   const tactical = calculateTacticalMatchup(homeCoach, awayCoach);
   const tactAdv = tactical.total; // -1 to +1 (biasanya -0.5 to +0.5)
 
-  // Faktor 3: H2H historical (bobot 15%)
+  // Faktor 3: H2H historical (bobot 10%)
   const h2h = h2hFactor(homeId, awayId); // -1 to +1
 
-  // Faktor 4: Lineup strength dari key players (bobot 20%)
+  // Faktor 4: Lineup strength dari key players + skuad lengkap (bobot 15%)
   // Jika lineup (resmi/perkiraan) tersedia, pemain kunci yang absen dari starting XI
   // mengurangi lineup strength tim tersebut.
   const homeStarters = lineups?.home.starters.map((p) => p.short ?? p.name);
@@ -171,14 +203,20 @@ export function calculatePrediction(
   const awayStr = getLineupStrength(awayId, awayStarters) / 100;
   const lineupAdv = (homeStr - awayStr) * 0.8; // -0.8 to +0.8
 
-  // Faktor 5: Coach quality — win rate (bobot 10%)
+  // Faktor 5: Coach quality — win rate (bobot 5%)
   const coachAdv = homeCoach && awayCoach
     ? ((homeCoach.winRate - awayCoach.winRate) / 100) * 0.5
     : 0;
 
+  // Faktor 6: Form turnamen saat ini — hasil pertandingan WC 2026 yang sudah selesai (bobot 25%)
+  // Tim yang menang besar/produktif di laga sebelumnya diprediksi lebih kuat di laga berikutnya.
+  const homeForm = currentFormFactor(homeId); // -1 to +1
+  const awayForm = currentFormFactor(awayId);
+  const formAdv = (homeForm - awayForm) / 2; // -1 to +1
+
   // Gabungkan — lambda home = BASE + keuntungan home
   // Lambda = expected goals, harus positif
-  const deltaHome = rankAdv * 0.35 + tactAdv * 0.3 + h2h * 0.15 + lineupAdv * 0.15 + coachAdv * 0.05;
+  const deltaHome = rankAdv * 0.25 + tactAdv * 0.2 + h2h * 0.1 + lineupAdv * 0.15 + coachAdv * 0.05 + formAdv * 0.25;
   const lambdaHome = Math.max(0.3, BASE_LAMBDA + deltaHome);
   const lambdaAway = Math.max(0.3, BASE_LAMBDA - deltaHome);
 
@@ -190,19 +228,23 @@ export function calculatePrediction(
   const altA = lambdaAway > lambdaHome ? bestScore.away : Math.max(0, bestScore.away + 1);
 
   // Confidence dari ketersediaan data
-  let confidence = 40; // base
-  if (FIFA_RANKING_AVAILABLE(homeId, awayId)) confidence += 20;
-  if (homeCoach?.winRate && awayCoach?.winRate) confidence += 15;
+  let confidence = 35; // base
+  if (FIFA_RANKING_AVAILABLE(homeId, awayId)) confidence += 15;
+  if (homeCoach?.winRate && awayCoach?.winRate) confidence += 10;
   if (h2hFactor(homeId, awayId) !== 0) confidence += 10;
   if (getLineupStrength(homeId, homeStarters) !== 50) confidence += 15;
+  if (homeForm !== 0 || awayForm !== 0) confidence += 15; // sudah ada data hasil pertandingan nyata
 
   const winner = probs.homeWin > probs.awayWin ? homeId : probs.awayWin > probs.homeWin ? awayId : null;
+  const formNote = homeForm !== 0 || awayForm !== 0
+    ? ` Form turnamen: ${homeId.toUpperCase()} ${homeForm >= 0 ? "+" : ""}${homeForm.toFixed(2)}, ${awayId.toUpperCase()} ${awayForm >= 0 ? "+" : ""}${awayForm.toFixed(2)} (dari hasil pertandingan WC 2026 yang sudah selesai).`
+    : "";
   const explanation = [
     `Expected goals: ${lambdaHome.toFixed(2)} – ${lambdaAway.toFixed(2)}.`,
     winner
       ? `${winner.toUpperCase()} difavoritkan (${Math.round(Math.max(probs.homeWin, probs.awayWin) * 100)}% prob menang).`
       : `Pertandingan sangat seimbang — imbang punya probabilitas ${Math.round(probs.draw * 100)}%.`,
-    tactical.description,
+    tactical.description + formNote,
   ].join(" ");
 
   return {
@@ -222,6 +264,7 @@ export function calculatePrediction(
       h2h: Math.round(h2h * 100) / 100,
       lineup: Math.round(lineupAdv * 100) / 100,
       coach: Math.round(coachAdv * 100) / 100,
+      form: Math.round(formAdv * 100) / 100,
     },
     explanation,
   };
