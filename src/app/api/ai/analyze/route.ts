@@ -57,7 +57,7 @@ function extractJSON(text: string): AIAnalysisResponse | null {
   }
 }
 
-async function tryClaude(body: AnalyzeBody, key: string): Promise<AIAnalysisResponse | null> {
+async function tryClaude(body: AnalyzeBody, key: string): Promise<{ result: AIAnalysisResponse | null; debug?: string }> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 28000);
   try {
@@ -73,25 +73,31 @@ async function tryClaude(body: AnalyzeBody, key: string): Promise<AIAnalysisResp
       }),
       signal: ctrl.signal,
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      return { result: null, debug: `Claude API error ${res.status}: ${errText.slice(0, 200)}` };
+    }
     const data = await res.json();
     const text = (data.content ?? []).filter((b: { type: string }) => b.type === "text").map((b: { text: string }) => b.text).join("\n");
     const parsed = extractJSON(text);
-    if (parsed) parsed._provider = "claude";
-    return parsed;
-  } catch {
-    return null;
+    if (parsed) {
+      parsed._provider = "claude";
+      return { result: parsed };
+    }
+    return { result: null, debug: `Claude response tidak berisi JSON valid: ${text.slice(0, 200)}` };
+  } catch (e) {
+    return { result: null, debug: `Claude fetch gagal: ${e instanceof Error ? e.message : String(e)}` };
   } finally {
     clearTimeout(t);
   }
 }
 
-async function tryGemini(body: AnalyzeBody, key: string): Promise<AIAnalysisResponse | null> {
+async function tryGemini(body: AnalyzeBody, key: string): Promise<{ result: AIAnalysisResponse | null; debug?: string }> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 20000);
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
       {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -103,14 +109,20 @@ async function tryGemini(body: AnalyzeBody, key: string): Promise<AIAnalysisResp
         signal: ctrl.signal,
       }
     );
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      return { result: null, debug: `Gemini API error ${res.status}: ${errText.slice(0, 200)}` };
+    }
     const data = await res.json();
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     const parsed = extractJSON(text);
-    if (parsed) parsed._provider = "gemini";
-    return parsed;
-  } catch {
-    return null;
+    if (parsed) {
+      parsed._provider = "gemini";
+      return { result: parsed };
+    }
+    return { result: null, debug: `Gemini response tidak berisi JSON valid: ${text.slice(0, 200)}` };
+  } catch (e) {
+    return { result: null, debug: `Gemini fetch gagal: ${e instanceof Error ? e.message : String(e)}` };
   } finally {
     clearTimeout(t);
   }
@@ -119,20 +131,25 @@ async function tryGemini(body: AnalyzeBody, key: string): Promise<AIAnalysisResp
 export async function POST(req: NextRequest) {
   const body = (await req.json()) as AnalyzeBody;
 
-  const claudeKey = body.provider === "claude" || !body.provider ? body.apiKey || process.env.ANTHROPIC_API_KEY : process.env.ANTHROPIC_API_KEY;
-  const geminiKey = body.provider === "gemini" ? body.apiKey || process.env.GEMINI_API_KEY : process.env.GEMINI_API_KEY;
+  const claudeKey = body.provider === "claude" || !body.provider ? body.apiKey || process.env.ANTHROPIC_API_KEY : undefined;
+  const geminiKey = body.provider === "gemini" ? body.apiKey || process.env.GEMINI_API_KEY : undefined;
+
+  let debug: string | undefined;
 
   // 1) Claude
   if (claudeKey) {
-    const r = await tryClaude(body, claudeKey);
-    if (r) return NextResponse.json(r);
+    const { result, debug: d } = await tryClaude(body, claudeKey);
+    if (result) return NextResponse.json(result);
+    debug = d;
   }
   // 2) Gemini
   if (geminiKey) {
-    const r = await tryGemini(body, geminiKey);
-    if (r) return NextResponse.json(r);
+    const { result, debug: d } = await tryGemini(body, geminiKey);
+    if (result) return NextResponse.json(result);
+    debug = d;
   }
   // 3) Static analysis — selalu berhasil
   const fallback = generateStaticAnalysis(body.home, body.away, body.homeCoach, body.awayCoach, body.userPrediction);
+  if (debug) fallback._debug = debug;
   return NextResponse.json(fallback);
 }

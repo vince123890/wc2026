@@ -76,6 +76,9 @@ export function AIAnalysisPanel({
       )}
 
       {error && <p className="mt-2 text-xs text-live">{error}</p>}
+      {result?._provider === "static" && result._debug && (
+        <p className="mt-2 text-[11px] text-live">⚠ AI gagal: {result._debug}</p>
+      )}
 
       {result && (
         <div className="space-y-3 text-sm">

@@ -144,6 +144,7 @@ export interface AIAnalysisResponse {
   userPredictionEval: string | null;
   postMatchSummary?: string | null;
   _provider?: "claude" | "gemini" | "static";
+  _debug?: string;
 }
 
 export interface ServiceHealth {
