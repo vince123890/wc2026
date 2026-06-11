@@ -114,6 +114,8 @@ export async function bdlEvents(matchId: string)  { const h = bdlHeaders(); if (
 const OFB_BASE = "https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026";
 export async function ofbTeams()  { return fetchJSON(`${OFB_BASE}/worldcup.teams.json`); }
 export async function ofbGroups() { return fetchJSON(`${OFB_BASE}/worldcup.groups.json`); }
+// Skuad resmi 26 pemain/tim (gratis, tanpa API key) — { name, fifa_code, group, players: [{number, pos, name, date_of_birth}] }
+export async function ofbSquads() { return fetchJSON(`${OFB_BASE}/worldcup.squads.json`, {}, 15000); }
 
 // ── Helper: coba berurutan, kembalikan pertama yang berhasil ──────────────────
 export async function firstAvailable<T>(

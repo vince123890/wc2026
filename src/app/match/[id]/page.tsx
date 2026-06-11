@@ -69,8 +69,8 @@ export default function MatchPage({ params }: { params: { id: string } }) {
   // Lineup perkiraan — fallback saat lineup resmi belum dirilis (~1 jam sebelum kickoff)
   const projectedLineups = useMemo(() => {
     if (lineups || !fixture?.homeId || !fixture?.awayId) return null;
-    const homeSquad = homeSquadRes?.source === "api-football" ? homeSquadRes.data : null;
-    const awaySquad = awaySquadRes?.source === "api-football" ? awaySquadRes.data : null;
+    const homeSquad = homeSquadRes?.source === "api-football" || homeSquadRes?.source === "openfootball" ? homeSquadRes.data : null;
+    const awaySquad = awaySquadRes?.source === "api-football" || awaySquadRes?.source === "openfootball" ? awaySquadRes.data : null;
     return {
       home: generateProjectedLineup(homeCoach?.formation ?? "4-3-3", getKeyPlayers(fixture.homeId), "home", homeSquad),
       away: generateProjectedLineup(awayCoach?.formation ?? "4-3-3", getKeyPlayers(fixture.awayId), "away", awaySquad),

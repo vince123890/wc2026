@@ -194,6 +194,33 @@ export function mapBDLGroupStandings(raw: { data?: Record<string, unknown>[] }):
   return out;
 }
 
+// ---------- openfootball full squads (26 pemain/tim, gratis tanpa API key) ----------
+import type { SquadPlayer } from "@/app/api/proxy/squads/route";
+
+const OFB_POS_TO_GROUP: Record<string, string> = {
+  GK: "Goalkeeper", DF: "Defender", MF: "Midfielder", FW: "Attacker",
+};
+
+// raw: array of { name, fifa_code, group, players: [{number, pos, name, date_of_birth}] }
+export function mapOFBSquad(raw: Record<string, unknown>[], fifaCode: string): SquadPlayer[] | null {
+  const team = raw.find((t) => String(t.fifa_code ?? "") === fifaCode);
+  if (!team) return null;
+  const players = (team.players as Record<string, unknown>[]) ?? [];
+  const thisYear = new Date().getFullYear();
+  return players.map((p, i) => {
+    const dob = String(p.date_of_birth ?? "");
+    const birthYear = Number(dob.slice(0, 4)) || 0;
+    return {
+      id: i + 1,
+      name: String(p.name ?? ""),
+      age: birthYear ? thisYear - birthYear : 0,
+      number: p.number != null ? Number(p.number) : null,
+      position: OFB_POS_TO_GROUP[String(p.pos ?? "")] ?? "Midfielder",
+      photo: "",
+    };
+  });
+}
+
 // ---------- helpers ----------
 function normaliseCode(code: string): string {
   return code.toLowerCase().replace(/\s+/g, "").slice(0, 5);

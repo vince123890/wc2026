@@ -94,14 +94,24 @@ const SQUAD_POS_GROUP: Record<string, "GK" | "DEF" | "MID" | "FWD"> = {
   Goalkeeper: "GK", Defender: "DEF", Midfielder: "MID", Attacker: "FWD",
 };
 
-// Skuad API-Football (26 pemain, lebih lengkap) — diprioritaskan jika tersedia
-function poolFromSquad(squad: SquadPlayer[]): Record<string, PoolPlayer[]> {
+// Skuad lengkap (26 pemain, dari API-Football atau openfootball) — diprioritaskan jika tersedia.
+// isStar/form di-enrich dari KEY_PLAYERS (pemain kunci) jika nama cocok, supaya starting XI
+// perkiraan tetap mengutamakan pemain bintang sambil tetap punya pool 26 pemain penuh untuk cadangan.
+function poolFromSquad(squad: SquadPlayer[], keyPlayers: KeyPlayer[] = []): Record<string, PoolPlayer[]> {
   const pool: Record<string, PoolPlayer[]> = { GK: [], DEF: [], MID: [], FWD: [] };
+  const keyByName = new Map(keyPlayers.map((k) => [k.name.toLowerCase(), k]));
   for (const p of squad) {
     const group = SQUAD_POS_GROUP[p.position];
     if (!group) continue;
     const short = p.name.split(" ").slice(-1)[0];
-    pool[group].push({ name: p.name, short, jersey: p.number ?? 0, isStar: false, form: 0 });
+    const key = keyByName.get(p.name.toLowerCase());
+    pool[group].push({
+      name: p.name,
+      short,
+      jersey: p.number ?? 0,
+      isStar: key?.isStar ?? false,
+      form: key?.form ?? 5,
+    });
   }
   return pool;
 }
@@ -128,7 +138,7 @@ export function generateProjectedLineup(
   const template = FORMATION_SLOTS[formation] ?? FORMATION_SLOTS[DEFAULT_FORMATION];
   const slots = side === "home" ? compressHome(template) : compressAway(template);
 
-  const pool = squad && squad.length > 0 ? poolFromSquad(squad) : poolFromKeyPlayers(keyPlayers);
+  const pool = squad && squad.length > 0 ? poolFromSquad(squad, keyPlayers) : poolFromKeyPlayers(keyPlayers);
   for (const g of Object.values(pool)) g.sort((a, b) => Number(b.isStar) - Number(a.isStar) || b.form - a.form || a.jersey - b.jersey);
 
   let placeholderId = 0;
