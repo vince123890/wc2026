@@ -8,7 +8,9 @@ export const maxDuration = 30;
 
 async function fetchTeamNews(teamName: string): Promise<NewsItem[]> {
   try {
-    const xml = await googleNewsRSS(`${teamName} World Cup 2026`);
+    // Quote nama tim + "Piala Dunia" agar Google News mencocokkan frasa persis
+    // (mencegah hasil generik yang hanya menyebut "World Cup 2026" tanpa nama tim).
+    const xml = await googleNewsRSS(`"${teamName}" Piala Dunia`);
     return parseGoogleNewsRSS(xml);
   } catch {
     return [];
