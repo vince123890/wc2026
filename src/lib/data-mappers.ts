@@ -113,8 +113,67 @@ export function mapAPIFootballFixture(raw: Record<string, unknown>): RealFixture
   };
 }
 
+// ---------- worldcup26.ir events ----------
+// Bentuk respons tidak konsisten/terdokumentasi antar pertandingan — bisa berupa
+// array langsung atau dibungkus { data: [...] } / { events: [...] }. Jika tidak
+// bisa menemukan array event, kembalikan [] supaya caller fallback ke FALLBACK_EVENTS
+// daripada mengirim object ke frontend (menyebabkan "TypeError: e is not iterable"
+// saat di-spread oleh CommentaryFeed).
+export function mapWC26Events(raw: unknown, matchId: string): MatchEvent[] {
+  const obj = raw as Record<string, unknown>;
+  const arr = Array.isArray(raw) ? raw : (Array.isArray(obj?.data) ? obj.data : Array.isArray(obj?.events) ? obj.events : null);
+  if (!arr) return [];
+
+  return (arr as Record<string, unknown>[]).map((e, i) => {
+    const type = String(e.type ?? e.event_type ?? "EVENT").toUpperCase();
+    const playerName = String(e.player_name ?? e.player ?? "");
+    return {
+      id: String(e.id ?? `${matchId}-${i}`),
+      min: Number(e.minute ?? e.min ?? e.time_elapsed ?? 0),
+      type,
+      teamId: TEAM_NAME_TO_ID[String(e.team_name ?? e.team ?? "")] ?? null,
+      playerId: null,
+      desc: String(e.description ?? e.desc ?? `${type} - ${playerName}`.trim()),
+    };
+  });
+}
+
+// ---------- API-Football events ----------
+// Shape: { response: [{ time: {elapsed}, team: {name}, player: {name}, type, detail, comments }] }
+export function mapAPIFootballEvents(raw: unknown, matchId: string): MatchEvent[] {
+  const response = (raw as Record<string, unknown>)?.response;
+  if (!Array.isArray(response)) return [];
+
+  const typeMap: Record<string, string> = {
+    Goal: "GOAL",
+    Card: "CARD",
+    subst: "SUBSTITUTION",
+    Var: "VAR",
+  };
+
+  return (response as Record<string, unknown>[]).map((e, i) => {
+    const time = (e.time as Record<string, unknown>) ?? {};
+    const team = (e.team as Record<string, unknown>) ?? {};
+    const player = (e.player as Record<string, unknown>) ?? {};
+    const apiType = String(e.type ?? "");
+    const detail = String(e.detail ?? "");
+    const type = detail.toUpperCase() === "YELLOW CARD" ? "YELLOW_CARD"
+      : detail.toUpperCase() === "RED CARD" ? "RED_CARD"
+      : typeMap[apiType] ?? apiType.toUpperCase() ?? "EVENT";
+
+    return {
+      id: `${matchId}-${i}`,
+      min: Number(time.elapsed ?? 0),
+      type,
+      teamId: normaliseCode(String(team.name ?? "")) || null,
+      playerId: null,
+      desc: `${detail}${player.name ? ` - ${player.name}` : ""}${e.comments ? ` (${e.comments})` : ""}`.trim(),
+    };
+  });
+}
+
 // ---------- API-Football Lineup mapper ----------
-import type { MatchLineups, TeamLineup, LineupPlayer } from "./types";
+import type { MatchLineups, TeamLineup, LineupPlayer, MatchEvent } from "./types";
 
 export function mapAPIFootballLineup(raw: Record<string, unknown>[]): MatchLineups | null {
   if (!raw || raw.length < 2) return null;
