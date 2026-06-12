@@ -7,6 +7,12 @@ import type { Coach, MatchLineups } from "./types";
 import { getLineupStrength } from "./key-players";
 import { computeStandings } from "./standings";
 import type { StandingRow } from "./standings-types";
+import { preWCFormFactor } from "./pre-wc-form";
+
+/** Negara host WC 2026 — bermain di negaranya sendiri memberi home advantage nyata
+ * (dukungan suporter, minim travel fatigue, familiaritas venue), berlaku terlepas
+ * dari penamaan home/away administratif di fixture. */
+const HOST_NATIONS = new Set(["usa", "mex", "can"]);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tactical Matchup Engine (FR-26)
@@ -102,11 +108,13 @@ function findStandingRow(teamId: string): StandingRow | null {
 /**
  * Form factor dari hasil pertandingan nyata yang sudah dimainkan: -1 to +1.
  * Menggabungkan poin per laga (vs rata-rata 1.5) dan selisih gol per laga.
- * Tim yang belum bertanding (played === 0) mengembalikan 0 (netral).
+ * Tim yang belum bertanding di WC 2026 (played === 0) — biasanya matchday 1-3 —
+ * fallback ke form 5 laga terakhir sebelum WC (preWCFormFactor), supaya faktor
+ * form tidak netral total di awal turnamen.
  */
 function currentFormFactor(teamId: string): number {
   const row = findStandingRow(teamId);
-  if (!row || row.played === 0) return 0;
+  if (!row || row.played === 0) return preWCFormFactor(teamId);
   const ppgDelta = (row.pts / row.played - 1.5) / 1.5; // -1 (selalu kalah) to +1 (selalu menang)
   const gdPerGame = row.gd / row.played;
   const gdDelta = Math.tanh(gdPerGame / 2); // selisih gol 2/laga ~ tanh(1)
@@ -201,8 +209,10 @@ export function calculatePrediction(
   // mengurangi lineup strength tim tersebut.
   const homeStarters = lineups?.home.starters.map((p) => p.short ?? p.name);
   const awayStarters = lineups?.away.starters.map((p) => p.short ?? p.name);
-  const homeStr = getLineupStrength(homeId, homeStarters) / 100; // 0-1
-  const awayStr = getLineupStrength(awayId, awayStarters) / 100;
+  const homeLineupStrength = getLineupStrength(homeId, homeStarters);
+  const awayLineupStrength = getLineupStrength(awayId, awayStarters);
+  const homeStr = (homeLineupStrength ?? 50) / 100; // 0-1, fallback netral jika tidak ada data
+  const awayStr = (awayLineupStrength ?? 50) / 100;
   const lineupAdv = (homeStr - awayStr) * 0.8; // -0.8 to +0.8
 
   // Faktor 5: Coach quality — win rate (bobot 5%)
@@ -217,15 +227,23 @@ export function calculatePrediction(
   const formAdv = (homeForm - awayForm) / 2; // -1 to +1
 
   // Faktor 7: Crowd/world prediction consensus — odds-implied win% dari API-Football
-  // /predictions (bobot 10%). Hanya tersedia pra-pertandingan; jika tidak ada data,
-  // factor netral (0) — perilaku identik dengan sebelum faktor ini ditambahkan.
-  const crowdAdv = crowdPercent
-    ? Math.max(-1, Math.min(1, (parseFloat(crowdPercent.home) - parseFloat(crowdPercent.away)) / 100))
+  // /predictions (bobot 10%). Hanya tersedia pra-pertandingan; jika tidak ada data atau
+  // format tidak terduga (parseFloat gagal -> NaN), factor netral (0) — perilaku identik
+  // dengan sebelum faktor ini ditambahkan, dan mencegah NaN merembes ke seluruh kalkulasi.
+  const homeCrowdPct = crowdPercent ? parseFloat(crowdPercent.home) : NaN;
+  const awayCrowdPct = crowdPercent ? parseFloat(crowdPercent.away) : NaN;
+  const crowdAvailable = Number.isFinite(homeCrowdPct) && Number.isFinite(awayCrowdPct);
+  const crowdAdv = crowdAvailable
+    ? Math.max(-1, Math.min(1, (homeCrowdPct - awayCrowdPct) / 100))
     : 0;
+
+  // Faktor 8: Home advantage untuk negara host WC 2026 (USA/MEX/CAN) — dukungan suporter,
+  // minim travel fatigue, familiaritas venue. Bonus kecil tambahan di luar bobot utama.
+  const hostAdv = (HOST_NATIONS.has(homeId) ? 0.07 : 0) - (HOST_NATIONS.has(awayId) ? 0.07 : 0);
 
   // Gabungkan — lambda home = BASE + keuntungan home
   // Lambda = expected goals, harus positif
-  const deltaHome = rankAdv * 0.4 + tactAdv * 0.2 + h2h * 0.1 + lineupAdv * 0.15 + coachAdv * 0.05 + formAdv * 0.1 + crowdAdv * 0.1;
+  const deltaHome = rankAdv * 0.4 + tactAdv * 0.2 + h2h * 0.1 + lineupAdv * 0.15 + coachAdv * 0.05 + formAdv * 0.1 + crowdAdv * 0.1 + hostAdv;
   // Amplifikasi non-linear: selisih kecil (tim setara) tetap halus, tapi gap besar
   // (favorit jauh lebih kuat) diperkuat supaya skor prediksi mencerminkan dominasi nyata
   // (mis. tim top-10 vs tim peringkat 80+ tidak boleh berakhir 1-1).
@@ -245,8 +263,9 @@ export function calculatePrediction(
   if (FIFA_RANKING_AVAILABLE(homeId, awayId)) confidence += 15;
   if (homeCoach?.winRate && awayCoach?.winRate) confidence += 10;
   if (h2hFactor(homeId, awayId) !== 0) confidence += 10;
-  if (getLineupStrength(homeId, homeStarters) !== 50) confidence += 15;
+  if (homeLineupStrength !== null || awayLineupStrength !== null) confidence += 15;
   if (homeForm !== 0 || awayForm !== 0) confidence += 15; // sudah ada data hasil pertandingan nyata
+  if (crowdAvailable) confidence += 5; // konsensus odds eksternal tersedia
 
   const winner = probs.homeWin > probs.awayWin ? homeId : probs.awayWin > probs.homeWin ? awayId : null;
   const formNote = homeForm !== 0 || awayForm !== 0

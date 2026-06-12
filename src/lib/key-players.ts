@@ -357,9 +357,12 @@ export function getStarPlayer(teamId: string): KeyPlayer | null {
 // startersShort: nama pendek pemain di starting XI (lineup resmi/perkiraan).
 // Pemain kunci yang TIDAK ada di starters dianggap tidak main (form dianggap 0)
 // — sehingga absennya pemain bintang menurunkan lineup strength.
-export function getLineupStrength(teamId: string, startersShort?: string[]): number {
+// Mengembalikan null jika tim tidak punya data pemain kunci sama sekali —
+// dibedakan dari skor valid 50 (rata-rata form persis 5.0) agar caller bisa
+// menentukan availability data secara akurat (lihat confidence di prediction-engine).
+export function getLineupStrength(teamId: string, startersShort?: string[]): number | null {
   const players = KEY_PLAYERS[teamId] ?? [];
-  if (!players.length) return 50;
+  if (!players.length) return null;
   if (!startersShort) {
     const avg = players.reduce((s, p) => s + p.form, 0) / players.length;
     return Math.round(avg * 10); // 0-100
