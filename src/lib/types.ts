@@ -92,6 +92,12 @@ export interface MatchEvent {
   aiComment?: string;
 }
 
+export interface NewsItem {
+  title: string;
+  link: string;
+  pubDate: string;
+}
+
 export interface StandingRow {
   teamId: string;
   played: number;

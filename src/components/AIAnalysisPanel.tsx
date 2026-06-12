@@ -18,6 +18,8 @@ export function AIAnalysisPanel({
   prediction,
   lineups,
   systemPrediction,
+  preMatchNews,
+  crowdPrediction,
 }: {
   home: Team;
   away: Team;
@@ -27,6 +29,8 @@ export function AIAnalysisPanel({
   prediction?: Prediction | null;
   lineups?: LineupSummary | null;
   systemPrediction?: PredictionResult | null;
+  preMatchNews?: { home: { title: string }[]; away: { title: string }[] } | null;
+  crowdPrediction?: { percent: { home: string; draw: string; away: string }; advice: string | null } | null;
 }) {
   const { apiKey, apiProvider } = useStore();
   const [result, setResult] = useState<AIAnalysisResponse | null>(null);
@@ -60,6 +64,8 @@ export function AIAnalysisPanel({
                 factors: systemPrediction.factors,
               }
             : null,
+          preMatchNews: preMatchNews ?? null,
+          crowdPrediction: crowdPrediction ?? null,
           apiKey,
           provider: apiProvider,
         }),

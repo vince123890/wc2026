@@ -19,7 +19,7 @@ ATURAN KETAT:
 Skema JSON: { "tacticalMatchup": string|null, "coachPhilosophy": string|null, "keyPlayers": [{"team","name","position","reason"}], "prediction": {"homeScore":number,"awayScore":number,"alternativeScenario":string,"reasoning":string}, "userPredictionEval": string|null }`;
 
 function buildUserPrompt(body: AnalyzeBody): string {
-  const { home, away, homeCoach, awayCoach, tier, userPrediction, lineups, systemPrediction } = body;
+  const { home, away, homeCoach, awayCoach, tier, userPrediction, lineups, systemPrediction, preMatchNews, crowdPrediction } = body;
   const lines = [
     `Pertandingan: ${home.name} (HOME) vs ${away.name} (AWAY). Tier analisis: ${tier}.`,
     `Statistik ${home.name}: rating ${home.rating}, attack ${home.attack}, defense ${home.defense}, possession ${home.possession}%, form ${home.form?.join("-")}.`,
@@ -44,9 +44,24 @@ function buildUserPrompt(body: AnalyzeBody): string {
     const f = systemPrediction.factors;
     lines.push(
       `Breakdown faktor sistem (positif = menguntungkan ${home.name}, range -1..1): ` +
-      `ranking ${f.ranking}, form turnamen ${f.form}, taktis ${f.tactical}, lineup ${f.lineup}, h2h ${f.h2h}, pelatih ${f.coach}.`
+      `ranking ${f.ranking}, form turnamen ${f.form}, taktis ${f.tactical}, lineup ${f.lineup}, h2h ${f.h2h}, pelatih ${f.coach}, crowd consensus ${f.crowd}.`
     );
     lines.push("Gunakan prediksi sistem di atas sebagai acuan utama untuk field prediction (lihat aturan #6 di system prompt).");
+  }
+  if (preMatchNews && (preMatchNews.home.length > 0 || preMatchNews.away.length > 0)) {
+    const homeHeadlines = preMatchNews.home.slice(0, 3).map((n) => n.title).join("; ") || "tidak ada";
+    const awayHeadlines = preMatchNews.away.slice(0, 3).map((n) => n.title).join("; ") || "tidak ada";
+    lines.push(`Berita terkini ${home.name}: ${homeHeadlines}.`);
+    lines.push(`Berita terkini ${away.name}: ${awayHeadlines}.`);
+    lines.push("Gunakan berita ini sebagai konteks tambahan (misal cedera, isu internal, momentum) jika relevan, tapi jangan jadikan acuan utama prediksi skor.");
+  }
+  if (crowdPrediction) {
+    const p = crowdPrediction.percent;
+    lines.push(
+      `Konsensus prediksi dunia (API-Football, odds-implied): ${home.name} ${p.home} / Seri ${p.draw} / ${away.name} ${p.away}.` +
+      (crowdPrediction.advice ? ` Saran: "${crowdPrediction.advice}".` : "")
+    );
+    lines.push("Konsensus ini adalah referensi tambahan dari luar sistem — tetap gunakan prediksi sistem sebagai acuan utama (aturan #6).");
   }
   if (userPrediction) lines.push(`Tebakan user: ${userPrediction.homeScore}-${userPrediction.awayScore}. Evaluasi di userPredictionEval.`);
   return lines.join("\n");
@@ -68,8 +83,10 @@ interface AnalyzeBody {
     probHomeWin: number;
     probDraw: number;
     probAwayWin: number;
-    factors: { ranking: number; tactical: number; h2h: number; lineup: number; coach: number; form: number };
+    factors: { ranking: number; tactical: number; h2h: number; lineup: number; coach: number; form: number; crowd: number };
   } | null;
+  preMatchNews?: { home: { title: string }[]; away: { title: string }[] } | null;
+  crowdPrediction?: { percent: { home: string; draw: string; away: string }; advice: string | null } | null;
   apiKey?: string;
   provider?: "claude" | "gemini";
 }

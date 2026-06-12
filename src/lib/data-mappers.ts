@@ -172,8 +172,36 @@ export function mapAPIFootballEvents(raw: unknown, matchId: string): MatchEvent[
   });
 }
 
+// ---------- Google News RSS ----------
+// Format item: <item><title>...</title><link>...</link><pubDate>...</pubDate>...</item>
+// Judul Google News biasanya diakhiri " - Nama Media" — suffix ini dibuang agar
+// tidak membingungkan saat ditampilkan/dikirim ke AI sebagai headline murni.
+const HTML_ENTITIES: Record<string, string> = {
+  "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'", "&apos;": "'",
+};
+
+function decodeEntities(s: string): string {
+  return s.replace(/&amp;|&lt;|&gt;|&quot;|&#39;|&apos;/g, (m) => HTML_ENTITIES[m] ?? m);
+}
+
+export function parseGoogleNewsRSS(xml: string, limit = 5): NewsItem[] {
+  const items: NewsItem[] = [];
+  const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+  let match: RegExpExecArray | null;
+  while ((match = itemRegex.exec(xml)) && items.length < limit) {
+    const block = match[1];
+    const titleRaw = block.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? "";
+    const link = block.match(/<link>([\s\S]*?)<\/link>/)?.[1]?.trim() ?? "";
+    const pubDate = block.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1]?.trim() ?? "";
+    let title = decodeEntities(titleRaw.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/, "$1")).trim();
+    title = title.replace(/\s+-\s+[^-]+$/, "");
+    if (title && link) items.push({ title, link, pubDate });
+  }
+  return items;
+}
+
 // ---------- API-Football Lineup mapper ----------
-import type { MatchLineups, TeamLineup, LineupPlayer, MatchEvent } from "./types";
+import type { MatchLineups, TeamLineup, LineupPlayer, MatchEvent, NewsItem } from "./types";
 
 export function mapAPIFootballLineup(raw: Record<string, unknown>[]): MatchLineups | null {
   if (!raw || raw.length < 2) return null;

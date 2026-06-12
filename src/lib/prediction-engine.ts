@@ -171,6 +171,7 @@ export interface PredictionResult {
     lineup: number;
     coach: number;
     form: number;
+    crowd: number;
   };
   explanation: string;
 }
@@ -180,7 +181,8 @@ export function calculatePrediction(
   awayId: string,
   homeCoach: Coach | null,
   awayCoach: Coach | null,
-  lineups?: MatchLineups | null
+  lineups?: MatchLineups | null,
+  crowdPercent?: { home: string; draw: string; away: string } | null
 ): PredictionResult {
   const BASE_LAMBDA = 1.35; // rata-rata gol per tim di WC
 
@@ -208,15 +210,22 @@ export function calculatePrediction(
     ? ((homeCoach.winRate - awayCoach.winRate) / 100) * 0.5
     : 0;
 
-  // Faktor 6: Form turnamen saat ini — hasil pertandingan WC 2026 yang sudah selesai (bobot 25%)
+  // Faktor 6: Form turnamen saat ini — hasil pertandingan WC 2026 yang sudah selesai (bobot 10%)
   // Tim yang menang besar/produktif di laga sebelumnya diprediksi lebih kuat di laga berikutnya.
   const homeForm = currentFormFactor(homeId); // -1 to +1
   const awayForm = currentFormFactor(awayId);
   const formAdv = (homeForm - awayForm) / 2; // -1 to +1
 
+  // Faktor 7: Crowd/world prediction consensus — odds-implied win% dari API-Football
+  // /predictions (bobot 10%). Hanya tersedia pra-pertandingan; jika tidak ada data,
+  // factor netral (0) — perilaku identik dengan sebelum faktor ini ditambahkan.
+  const crowdAdv = crowdPercent
+    ? Math.max(-1, Math.min(1, (parseFloat(crowdPercent.home) - parseFloat(crowdPercent.away)) / 100))
+    : 0;
+
   // Gabungkan — lambda home = BASE + keuntungan home
   // Lambda = expected goals, harus positif
-  const deltaHome = rankAdv * 0.4 + tactAdv * 0.2 + h2h * 0.1 + lineupAdv * 0.15 + coachAdv * 0.05 + formAdv * 0.2;
+  const deltaHome = rankAdv * 0.4 + tactAdv * 0.2 + h2h * 0.1 + lineupAdv * 0.15 + coachAdv * 0.05 + formAdv * 0.1 + crowdAdv * 0.1;
   // Amplifikasi non-linear: selisih kecil (tim setara) tetap halus, tapi gap besar
   // (favorit jauh lebih kuat) diperkuat supaya skor prediksi mencerminkan dominasi nyata
   // (mis. tim top-10 vs tim peringkat 80+ tidak boleh berakhir 1-1).
@@ -269,6 +278,7 @@ export function calculatePrediction(
       lineup: Math.round(lineupAdv * 100) / 100,
       coach: Math.round(coachAdv * 100) / 100,
       form: Math.round(formAdv * 100) / 100,
+      crowd: Math.round(crowdAdv * 100) / 100,
     },
     explanation,
   };

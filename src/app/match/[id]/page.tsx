@@ -1,7 +1,7 @@
 "use client";
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { useFixtures, useLineups, useCoach, useMatchEvents, useSquad } from "@/hooks";
+import { useFixtures, useLineups, useCoach, useMatchEvents, useSquad, useMatchNews, useAPIFPrediction } from "@/hooks";
 import { useMatchState, useCountdown, canPredict, isLiveState } from "@/hooks/match-state";
 import { WC2026_TEAMS } from "@/lib/wc2026-data";
 import { calculateSystemConfidence } from "@/lib/confidence";
@@ -15,6 +15,7 @@ import { ScoreEvaluation, PostMatchPanel } from "@/components/EvaluationPanels";
 import { PredictionPanel, SecondOpinionPanel } from "@/components/PredictionPanel";
 import { PlayersPanel } from "@/components/PlayersPanel";
 import { H2HPanel } from "@/components/H2HPanel";
+import { MatchNewsPanel } from "@/components/MatchNewsPanel";
 import { StatRadarChart } from "@/components/StatChart";
 import { StatusBadge, Crest } from "@/components/MatchCard";
 import { useStore } from "@/lib/store";
@@ -60,11 +61,14 @@ export default function MatchPage({ params }: { params: { id: string } }) {
   const { data: eventsRes } = useMatchEvents(id, live);
   const { data: homeSquadRes } = useSquad(fixture?.homeId ?? undefined);
   const { data: awaySquadRes } = useSquad(fixture?.awayId ?? undefined);
+  const { data: newsRes } = useMatchNews(fixture?.homeName ?? "", fixture?.awayName ?? "", canPredict(matchState));
+  const { data: apifPredictionRes } = useAPIFPrediction(id, canPredict(matchState));
 
   const lineups = lineupRes?.data ?? null;
   const homeCoach = homeCoachRes?.data ?? null;
   const awayCoach = awayCoachRes?.data ?? null;
   const events = eventsRes?.data ?? [];
+  const crowdOpinion = apifPredictionRes?.data ?? null;
 
   // Lineup perkiraan — fallback saat lineup resmi belum dirilis (~1 jam sebelum kickoff)
   const projectedLineups = useMemo(() => {
@@ -119,8 +123,8 @@ export default function MatchPage({ params }: { params: { id: string } }) {
 
   const prediction = useMemo(() => {
     if (!fixture) return null;
-    return calculatePrediction(fixture.homeId ?? "", fixture.awayId ?? "", homeCoach, awayCoach, effectiveLineups);
-  }, [fixture?.homeId, fixture?.awayId, homeCoach?.name, awayCoach?.name, effectiveLineups]);
+    return calculatePrediction(fixture.homeId ?? "", fixture.awayId ?? "", homeCoach, awayCoach, effectiveLineups, crowdOpinion?.percent ?? null);
+  }, [fixture?.homeId, fixture?.awayId, homeCoach?.name, awayCoach?.name, effectiveLineups, crowdOpinion?.percent]);
 
   const tactical = useMemo(() => {
     return calculateTacticalMatchup(homeCoach, awayCoach);
@@ -220,6 +224,12 @@ export default function MatchPage({ params }: { params: { id: string } }) {
           <StatRadarChart home={home} away={away} />
           <H2HPanel homeId={fixture.homeId ?? ""} awayId={fixture.awayId ?? ""}
             homeName={fixture.homeName} awayName={fixture.awayName} />
+          {canPredict(matchState) && newsRes?.data && (
+            <MatchNewsPanel
+              homeName={fixture.homeName} awayName={fixture.awayName}
+              homeNews={newsRes.data.home} awayNews={newsRes.data.away}
+            />
+          )}
           {isFinished && <ScoreEvaluation fixture={fixture} />}
           {live && (
             <div>
@@ -295,7 +305,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
           {prediction && (
             <PredictionPanel fixture={fixture} prediction={prediction} />
           )}
-          <SecondOpinionPanel fixture={fixture} />
+          <SecondOpinionPanel fixture={fixture} opinion={crowdOpinion} />
           <AIAnalysisPanel
             home={home} away={away}
             homeCoach={homeCoach} awayCoach={awayCoach}
@@ -303,6 +313,8 @@ export default function MatchPage({ params }: { params: { id: string } }) {
             prediction={predictions[fixture.id] ?? null}
             lineups={lineupsForAI}
             systemPrediction={prediction}
+            preMatchNews={newsRes?.data ?? null}
+            crowdPrediction={crowdOpinion ? { percent: crowdOpinion.percent, advice: crowdOpinion.advice } : null}
           />
         </div>
       )}

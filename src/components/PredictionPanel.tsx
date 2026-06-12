@@ -5,7 +5,7 @@ import type { RealFixture } from "@/lib/wc2026-data";
 import { WC2026_TEAMS } from "@/lib/wc2026-data";
 import { isPredictionLocked } from "@/lib/scoring";
 import { useStore } from "@/lib/store";
-import { useAPIFPrediction } from "@/hooks";
+import type { APIFPredictionData } from "@/app/api/proxy/prediction/route";
 
 interface Props {
   fixture: RealFixture;
@@ -209,11 +209,7 @@ function FactorBreakdown({ factors }: { factors: PredictionResult["factors"] }) 
  * Second opinion — API-Football /predictions (Tier 2 addendum, gratis dalam kuota 100 req/hari)
  * Ditampilkan sebagai pembanding terhadap Prediction Score Engine internal.
  */
-export function SecondOpinionPanel({ fixture }: { fixture: RealFixture }) {
-  const { data, isLoading } = useAPIFPrediction(fixture.id);
-  const opinion = data?.data;
-
-  if (isLoading) return null;
+export function SecondOpinionPanel({ fixture, opinion }: { fixture: RealFixture; opinion?: APIFPredictionData | null }) {
   if (!opinion || (!opinion.winner && !opinion.advice)) return null;
 
   return (

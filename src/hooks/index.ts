@@ -1,7 +1,7 @@
 // Hooks — TanStack Query (FE-R03: server state). Polling live events (ARCH-R04).
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import type { MatchLineups, MatchEvent, Coach, Team } from "@/lib/types";
+import type { MatchLineups, MatchEvent, Coach, Team, NewsItem } from "@/lib/types";
 import type { RealFixture } from "@/lib/wc2026-data";
 import { WC2026_FIXTURES } from "@/lib/wc2026-data";
 import { useStore } from "@/lib/store";
@@ -109,6 +109,19 @@ export function useMatchEvents(matchId: string, isLive: boolean) {
     refetchInterval: isLive ? 30_000 : false,
     refetchIntervalInBackground: false,
     enabled: !!matchId,
+  });
+}
+
+// Pre-match news — Google News RSS (gratis, tanpa API key), hanya sebelum kickoff
+export function useMatchNews(homeName: string, awayName: string, enabled = true) {
+  return useQuery({
+    queryKey: ["match-news", homeName, awayName],
+    queryFn: () => fetchProxy<{ home: NewsItem[]; away: NewsItem[] }>(
+      `/api/proxy/news?home=${encodeURIComponent(homeName)}&away=${encodeURIComponent(awayName)}`
+    ),
+    enabled: enabled && !!homeName && !!awayName,
+    staleTime: 30 * 60_000,
+    retry: 0,
   });
 }
 

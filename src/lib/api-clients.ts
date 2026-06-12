@@ -24,6 +24,28 @@ async function fetchJSON(url: string, headers: Record<string, string> = {}, time
   }
 }
 
+async function fetchText(url: string, headers: Record<string, string> = {}, timeoutMs = DEFAULT_TIMEOUT) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      headers: { Accept: "application/xml, text/xml", ...headers },
+      signal: ctrl.signal,
+      next: { revalidate: 1800 },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${url}`);
+    return await res.text();
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+// ── Google News RSS (GRATIS, tanpa API key) ──────────────────────────────────
+export async function googleNewsRSS(query: string) {
+  const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=id&gl=ID&ceid=ID:id`;
+  return fetchText(url);
+}
+
 // ── worldcup26.ir (GRATIS — JWT dari registrasi gratis) ──────────────────────
 function wc26Headers(): Record<string, string> {
   const jwt = process.env.WC26_JWT;
