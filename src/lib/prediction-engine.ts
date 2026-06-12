@@ -182,7 +182,7 @@ export function calculatePrediction(
   awayCoach: Coach | null,
   lineups?: MatchLineups | null
 ): PredictionResult {
-  const BASE_LAMBDA = 1.25; // rata-rata gol per tim di WC
+  const BASE_LAMBDA = 1.35; // rata-rata gol per tim di WC
 
   // Faktor 1: FIFA Ranking (bobot 25%)
   const rankAdv = rankingFactor(homeId, awayId); // -1 to +1
@@ -216,9 +216,13 @@ export function calculatePrediction(
 
   // Gabungkan — lambda home = BASE + keuntungan home
   // Lambda = expected goals, harus positif
-  const deltaHome = rankAdv * 0.25 + tactAdv * 0.2 + h2h * 0.1 + lineupAdv * 0.15 + coachAdv * 0.05 + formAdv * 0.25;
-  const lambdaHome = Math.max(0.3, BASE_LAMBDA + deltaHome);
-  const lambdaAway = Math.max(0.3, BASE_LAMBDA - deltaHome);
+  const deltaHome = rankAdv * 0.4 + tactAdv * 0.2 + h2h * 0.1 + lineupAdv * 0.15 + coachAdv * 0.05 + formAdv * 0.2;
+  // Amplifikasi non-linear: selisih kecil (tim setara) tetap halus, tapi gap besar
+  // (favorit jauh lebih kuat) diperkuat supaya skor prediksi mencerminkan dominasi nyata
+  // (mis. tim top-10 vs tim peringkat 80+ tidak boleh berakhir 1-1).
+  const ampDelta = Math.sign(deltaHome) * (Math.abs(deltaHome) + Math.pow(Math.abs(deltaHome), 2.5) * 3);
+  const lambdaHome = Math.max(0.25, BASE_LAMBDA + ampDelta);
+  const lambdaAway = Math.max(0.25, BASE_LAMBDA - ampDelta);
 
   const bestScore = mostLikelyScore(lambdaHome, lambdaAway);
   const probs = matchProbabilities(lambdaHome, lambdaAway);

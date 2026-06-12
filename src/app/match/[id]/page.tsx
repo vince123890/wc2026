@@ -173,6 +173,9 @@ export default function MatchPage({ params }: { params: { id: string } }) {
                 ? <div>
                     <div className="text-xl font-bold text-gold">{prediction.homeScore} – {prediction.awayScore}</div>
                     <div className="text-[10px] text-ink-low">prediksi sistem</div>
+                    <div className="mt-0.5 text-[10px] text-ink-mid">
+                      {prediction.probHomeWin}% – {prediction.probDraw}% – {prediction.probAwayWin}%
+                    </div>
                   </div>
                 : <span className="text-xl text-ink-low">vs</span>}
           </div>
