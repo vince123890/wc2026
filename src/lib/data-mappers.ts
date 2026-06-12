@@ -149,6 +149,49 @@ export function mapAPIFootballLineup(raw: Record<string, unknown>[]): MatchLineu
   return { home: mapTeam(raw[0] as Record<string, unknown>), away: mapTeam(raw[1] as Record<string, unknown>) };
 }
 
+// ---------- BALLDONTLIE lineups ----------
+// Shape (FIFA GOAT tier): { data: [ { team: {...}, formation, starting_lineup: [...]|starters,
+//                                       substitutes: [...]|bench, is_home: boolean }, {...} ] }
+// Tidak semua field dijamin ada (tergantung tier/match) — kembalikan null jika
+// tidak bisa menemukan 2 entry tim dengan starter, supaya caller fallback ke sumber lain
+// daripada mengirim shape rusak ke frontend (TypeError: e is not iterable).
+export function mapBDLLineups(raw: unknown): MatchLineups | null {
+  const arr = (raw as Record<string, unknown>)?.data;
+  if (!Array.isArray(arr) || arr.length < 2) return null;
+
+  const mapPlayer = (p: Record<string, unknown>, i: number, prefix: string): LineupPlayer => {
+    const name = String(p.name ?? p.player_name ?? "");
+    return {
+      id: String(p.id ?? `${prefix}-${i}`),
+      name,
+      short: name.split(" ").pop() ?? name,
+      pos: String(p.position ?? p.pos ?? "FWD"),
+      jersey: Number(p.number ?? p.jersey ?? i + 1),
+    };
+  };
+
+  const mapTeam = (entry: Record<string, unknown>, side: string): TeamLineup | null => {
+    const starterRaw = (entry.starting_lineup ?? entry.starters ?? entry.starting_xi) as unknown[] | undefined;
+    if (!Array.isArray(starterRaw) || starterRaw.length === 0) return null;
+    const benchRaw = (entry.substitutes ?? entry.bench) as unknown[] | undefined;
+    return {
+      formation: String(entry.formation ?? "4-3-3"),
+      confirmed: true,
+      starters: starterRaw.map((p, i) => mapPlayer(p as Record<string, unknown>, i, `${side}-s`)),
+      bench: Array.isArray(benchRaw) ? benchRaw.map((p, i) => mapPlayer(p as Record<string, unknown>, i, `${side}-b`)) : [],
+    };
+  };
+
+  const homeEntry = arr.find((e) => (e as Record<string, unknown>).is_home === true) ?? arr[0];
+  const awayEntry = arr.find((e) => (e as Record<string, unknown>).is_home === false) ?? arr[1];
+
+  const home = mapTeam(homeEntry as Record<string, unknown>, "home");
+  const away = mapTeam(awayEntry as Record<string, unknown>, "away");
+  if (!home || !away) return null;
+
+  return { home, away };
+}
+
 // ---------- BALLDONTLIE group standings ----------
 // Shape: { data: [{ team: { abbreviation, name }, group: { name }, position, played,
 //                    won, drawn, lost, goals_for, goals_against, goal_difference, points }] }
