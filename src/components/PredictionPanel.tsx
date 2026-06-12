@@ -177,6 +177,7 @@ function FactorBreakdown({ factors }: { factors: PredictionResult["factors"] }) 
     { label: "Kekuatan lineup", val: factors.lineup, icon: "👕" },
     { label: "Head-to-Head historis", val: factors.h2h, icon: "📜" },
     { label: "Kualitas pelatih", val: factors.coach, icon: "🧠" },
+    { label: "Konsensus prediksi dunia", val: factors.crowd, icon: "🌐" },
   ];
   return (
     <div className="mt-2">

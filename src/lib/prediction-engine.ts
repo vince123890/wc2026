@@ -254,9 +254,10 @@ export function calculatePrediction(
   const bestScore = mostLikelyScore(lambdaHome, lambdaAway);
   const probs = matchProbabilities(lambdaHome, lambdaAway);
 
-  // Alternative score: ±1 gol di sisi yang lebih lemah
-  const altH = lambdaHome > lambdaAway ? bestScore.home : Math.max(0, bestScore.home + 1);
-  const altA = lambdaAway > lambdaHome ? bestScore.away : Math.max(0, bestScore.away + 1);
+  // Skenario alternatif: tim yang difavoritkan (lambda lebih tinggi) menang
+  // dengan margin lebih besar (+1 gol) — skenario "favorit lebih dominan".
+  const altH = lambdaHome >= lambdaAway ? bestScore.home + 1 : bestScore.home;
+  const altA = lambdaAway > lambdaHome ? bestScore.away + 1 : bestScore.away;
 
   // Confidence dari ketersediaan data
   let confidence = 35; // base
